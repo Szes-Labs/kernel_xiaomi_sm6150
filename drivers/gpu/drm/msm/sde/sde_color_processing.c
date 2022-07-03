@@ -27,10 +27,6 @@
 #include "dsi_panel.h"
 #include "exposure_adjustment.h"
 
-#ifdef CONFIG_DRM_MSM_KCAL_CTRL
-#include "sde_hw_kcal_ctrl.h"
-#endif
-
 struct sde_cp_node {
 	u32 property_id;
 	u32 prop_flags;
@@ -1032,12 +1028,6 @@ exit:
 
 }
 
-#ifdef CONFIG_DRM_MSM_KCAL_CTRL
-struct drm_crtc *g_pcc_crtc;
-struct drm_property *g_pcc_property;
-uint64_t g_pcc_val;
-#endif
-
 static int sde_cp_crtc_set_property_common(struct drm_crtc *crtc,
 				struct drm_property *property,
 				uint64_t val, bool ea_owner)
@@ -1088,15 +1078,6 @@ static int sde_cp_crtc_set_property_common(struct drm_crtc *crtc,
 		ret = 0;
 		goto exit;
 	}
-
-#ifdef CONFIG_DRM_MSM_KCAL_CTRL
-	if (prop_node->feature == SDE_CP_CRTC_DSPP_PCC) {
-		pr_debug("%s pcc kad kcal\n", __func__);
-		g_pcc_crtc = crtc;
-		g_pcc_property = property;
-		g_pcc_val = val;
-	}
-#endif
 
 	/**
 	 * sde_crtc is virtual ensure that hardware has been attached to the
@@ -1171,23 +1152,6 @@ int sde_cp_crtc_set_property_ea(struct drm_crtc *crtc,
 {
 	return sde_cp_crtc_set_property_common(crtc, property, val, true);
 }
-
-#ifdef CONFIG_DRM_MSM_KCAL_CTRL
-void kcal_force_update(void) {
-	if (g_pcc_crtc) {
-		pr_debug("%s force kad kcal\n", __func__);
-		/*
-		 * The stored value is the latest PCC blob, which belongs to the
-		 * exposure adjustment driver while its dimming is active, so go
-		 * through the owner-aware path to get the new kcal scaling
-		 * applied instead of having the update dropped.
-		 */
-		sde_cp_crtc_set_property_ea(g_pcc_crtc, g_pcc_property,
-					    g_pcc_val);
-	}
-}
-EXPORT_SYMBOL(kcal_force_update);
-#endif
 
 int sde_cp_crtc_get_property(struct drm_crtc *crtc,
 			     struct drm_property *property, uint64_t *val)
