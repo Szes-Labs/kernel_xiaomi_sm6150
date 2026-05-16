@@ -26,6 +26,29 @@
 #include "adreno_a4xx.h"
 #include "adreno_a5xx.h"
 
+/* =====================================================================
+ * TRACE HIJACK MECHANISM
+ * If CONFIG_KGSL_TRACE is absent, transform all trace declarations
+ * below into harmless, zero-cost static inline stubs.
+ * =====================================================================
+ */
+#ifndef CONFIG_KGSL_TRACE
+
+#undef TRACE_EVENT
+#define TRACE_EVENT(name, proto, args, tstruct, assign, print) \
+    static inline void trace_##name(proto) { } \
+    static inline bool trace_##name##_enabled(void) { return false; }
+
+#undef DECLARE_EVENT_CLASS
+#define DECLARE_EVENT_CLASS(name, proto, args, tstruct, assign, print)
+
+#undef DEFINE_EVENT
+#define DEFINE_EVENT(template, name, proto, args) \
+    static inline void trace_##name(proto) { } \
+    static inline bool trace_##name##_enabled(void) { return false; }
+
+#endif /* !CONFIG_KGSL_TRACE */
+
 TRACE_EVENT(adreno_cmdbatch_queued,
 	TP_PROTO(struct kgsl_drawobj *drawobj, unsigned int queued),
 	TP_ARGS(drawobj, queued),
