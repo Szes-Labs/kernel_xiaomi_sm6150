@@ -31,7 +31,6 @@ msm_adreno-y += \
 	adreno_a6xx_rgmu.o \
 	adreno_sysfs.o \
 	adreno.o \
-	adreno_cp_parser.o \
 	adreno_perfcounter.o
 
 msm_adreno-$(CONFIG_QCOM_KGSL_IOMMU) += adreno_iommu.o
