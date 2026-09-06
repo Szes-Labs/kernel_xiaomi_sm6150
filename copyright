@@ -28,7 +28,7 @@ fi
 # ── Build Config ─────────────────────────────────────────────────
 DEVICE="courbet"
 KNAME="Evagelion"
-VAR="01"
+VAR="Miui-test"
 
 ZIPNAME="${KNAME}-${VAR}.zip"
 
