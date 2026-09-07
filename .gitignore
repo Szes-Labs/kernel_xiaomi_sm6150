@@ -127,6 +127,9 @@ kernel/configs/android-*.cfg
 
 # build output
 /out/
+/build.log
+/*.zip
+/gcc-arm64/
 
 #
 #Ignoring Android.bp link file

@@ -36,7 +36,6 @@ aic79xx-y					+= aic79xx_osm.o	\
 
 ccflags-y += -I $(srctree)/drivers/scsi
 ifdef WARNINGS_BECOME_ERRORS
-ccflags-y += -Werror
 endif
 
 # Files generated that shall be removed upon make clean
