@@ -72,3 +72,12 @@ config ZRAM_ENTROPY_THRESHOLD
 	  Pages with entropy above ZRAM_ENTROPY_THRESHOLD will be stored
 	  uncompressed. The default value was chosen as a reasonable balance 
 	  between compression ratio and performance.
+
+config ZRAM_SIZE_OVERRIDE
+	int "zram size to set from kernel"
+	range 1 8
+	default 2
+	depends on ZRAM
+	help
+	  Sets the zram device size in GiB from kernel. This overrides any
+	  size written to /sys/block/zramX/disksize.
