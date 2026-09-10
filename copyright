@@ -36,13 +36,13 @@ ANYKERNEL_REPO="https://github.com/ZGSYet/AnyKernel3"
 ANYKERNEL_BRANCH="master"
 
 # ── Toolchain Config ─────────────────────────────────────────────
-# Eva GCC akan di-install langsung ke:
-# ~/kernel/gcc-arm64
+# Clang akan di-install langsung ke:
+# ~/kernel/clang
 
-TOOLCHAIN_DIR="$KERNEL_DIR/gcc-arm64"
-GCC_DIR="$TOOLCHAIN_DIR"
+TOOLCHAIN_DIR="$KERNEL_DIR/clang"
+CLANG_DIR="$TOOLCHAIN_DIR"
 
-GCC_URL="https://github.com/mvaisakh/gcc-build/releases/download/06092026/eva-gcc-arm64-06092026.xz"
+CLANG_URL="https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230725-release/Clang-17.0.0-20230725.tar.gz"
 
 # ── Output Paths ─────────────────────────────────────────────────
 OUT="$KERNEL_DIR/out"
@@ -59,7 +59,7 @@ export ARCH=arm64
 export KBUILD_BUILD_USER="Aciss"
 export KBUILD_BUILD_HOST="TUF-FA5093"
 
-export PATH="$GCC_DIR/bin:$PATH"
+export PATH="$CLANG_DIR/bin:$PATH"
 
 SECONDS=0
 
@@ -124,92 +124,92 @@ tg_send_log() {
 
 # ── Toolchain Setup ──────────────────────────────────────────────
 
-setup_gcc() {
+setup_clang() {
 
-    if [ -x "$GCC_DIR/bin/aarch64-elf-gcc" ]; then
+    if [ -x "$CLANG_DIR/bin/clang" ]; then
 
-        echo "[0/4] Eva GCC already installed."
-        echo "      Path: $GCC_DIR"
+        echo "[0/4] Clang already installed."
+        echo "      Path: $CLANG_DIR"
 
         return 0
     fi
 
-    echo "[0/4] Installing Eva GCC..."
-    echo "      Path: $GCC_DIR"
+    echo "[0/4] Installing Clang..."
+    echo "      Path: $CLANG_DIR"
 
     tg_update "Kernel Build
 
 Device : $DEVICE
 Kernel : $KNAME
 
-[0/4] Installing Eva GCC
-Path   : $GCC_DIR
+[0/4] Installing Clang
+Path   : $CLANG_DIR
 
 Status : Downloading"
 
-    mkdir -p "$GCC_DIR"
+    mkdir -p "$CLANG_DIR"
 
     wget -q --show-progress \
-        "$GCC_URL" \
-        -O "$GCC_DIR/gcc.tar"
+        "$CLANG_URL" \
+        -O "$CLANG_DIR/clang.tar.gz"
 
-    if [ ! -s "$GCC_DIR/gcc.tar" ]; then
+    if [ ! -s "$CLANG_DIR/clang.tar.gz" ]; then
 
-        echo "Download Eva GCC failed."
+        echo "Download Clang failed."
 
         tg_update "Kernel Build Failed
 
 Device : $DEVICE
 Kernel : $KNAME
 
-Error  : Eva GCC download failed"
+Error  : Clang download failed"
 
         exit 1
     fi
 
     echo
-    echo "Extracting Eva GCC..."
+    echo "Extracting Clang..."
 
-    tar -xf "$GCC_DIR/gcc.tar" \
-        -C "$KERNEL_DIR"
+    tar -xzf "$CLANG_DIR/clang.tar.gz" \
+        -C "$CLANG_DIR"
 
     if [ $? -ne 0 ]; then
 
-        echo "Failed to extract Eva GCC."
+        echo "Failed to extract Clang."
 
-        rm -f "$GCC_DIR/gcc.tar"
+        rm -f "$CLANG_DIR/clang.tar.gz"
 
         tg_update "Kernel Build Failed
 
 Device : $DEVICE
 Kernel : $KNAME
 
-Error  : Eva GCC extraction failed"
+Error  : Clang extraction failed"
 
         exit 1
     fi
 
-    rm -f "$GCC_DIR/gcc.tar"
+    rm -f "$CLANG_DIR/clang.tar.gz"
 
-    if [ ! -x "$GCC_DIR/bin/aarch64-elf-gcc" ]; then
+    if [ ! -x "$CLANG_DIR/bin/clang" ]; then
 
-        echo "GCC binary not found."
+        echo "Clang binary not found."
 
         tg_update "Kernel Build Failed
 
 Device : $DEVICE
 Kernel : $KNAME
 
-Error  : aarch64-elf-gcc binary not found"
+Error  : clang binary not found"
 
         exit 1
     fi
 
     echo
-    echo "Eva GCC installed."
-    echo "Path: $GCC_DIR"
+    echo "Clang installed."
+    echo "Path: $CLANG_DIR"
 
-    "$GCC_DIR/bin/aarch64-elf-gcc" --version | head -1
+    "$CLANG_DIR/bin/clang" --version | head -1
 
     echo
 }
@@ -223,7 +223,7 @@ echo " Device  : $DEVICE"
 echo " Kernel  : $KNAME"
 echo " Variant : $VAR"
 echo " Builder : $KBUILD_BUILD_USER@$KBUILD_BUILD_HOST"
-echo " Eva GCC : $GCC_DIR"
+echo " Clang   : $CLANG_DIR"
 echo " Output  : $ZIPNAME"
 echo "================================================"
 
@@ -243,7 +243,7 @@ Status  : Starting"
 
 # ── Step 0: Toolchain ────────────────────────────────────────────
 
-setup_gcc
+setup_clang
 
 # Pastikan selalu kembali ke root kernel
 cd "$KERNEL_DIR" || exit 1
@@ -292,7 +292,8 @@ Status  : Loading"
 
 make O="$OUT" \
     ARCH=arm64 \
-    CROSS_COMPILE="$GCC_DIR/bin/aarch64-elf-" \
+    LLVM=1 \
+    CROSS_COMPILE=aarch64-linux-gnu- \
     vendor/acis_defconfig
 
 DEFCONFIG_STATUS=$?
@@ -332,7 +333,7 @@ Kernel : $KNAME
 [3/4] Compile
 
 Threads : $THREADS
-Compiler: Eva GCC
+Compiler: Clang
 
 Status  : Building"
 
@@ -341,7 +342,9 @@ rm -f "$BUILD_LOG"
 make -j"$THREADS" \
     O="$OUT" \
     ARCH=arm64 \
-    CROSS_COMPILE="$GCC_DIR/bin/aarch64-elf-" \
+    LLVM=1 \
+    CROSS_COMPILE=aarch64-linux-gnu- \
+    CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
     2>&1 | tee "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}
