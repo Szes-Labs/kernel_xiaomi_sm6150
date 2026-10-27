@@ -877,7 +877,7 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 
 	if (bl_lvl > 0)
 		bl_lvl = ea_panel_calc_backlight(bl_lvl < bl_dc_min ? bl_dc_min : bl_lvl);
-		
+
 	if (bl_lvl == 0)
         dsi_panel_tx_cmd_set(panel,
                 DSI_CMD_SET_DISP_DIMMINGOFF);
@@ -3851,6 +3851,7 @@ int dsi_panel_drv_init(struct dsi_panel *panel,
 	if (rc)
 		pr_err("sysfs group creation failed, rc=%d\n", rc);
 	set_panel = panel;
+	ea_panel_init(panel);
 #endif
 
 	goto exit;
@@ -4312,6 +4313,9 @@ int dsi_panel_set_lp1(struct dsi_panel *panel)
 		return -EINVAL;
 	}
 
+	/* entering AOD: drop a pending normal backlight clamp */
+	ea_panel_reset();
+
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
 		goto exit;
@@ -4350,6 +4354,9 @@ int dsi_panel_set_lp2(struct dsi_panel *panel)
 		return -EINVAL;
 	}
 
+	/* entering AOD: drop a pending normal backlight clamp */
+	ea_panel_reset();
+
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
 		goto exit;
@@ -4375,6 +4382,12 @@ int dsi_panel_set_nolp(struct dsi_panel *panel)
 		pr_err("invalid params\n");
 		return -EINVAL;
 	}
+
+	/*
+	 * Leaving AOD restarts the display pipeline, so the PCC has to be
+	 * latched again before the normal backlight level is pinned.
+	 */
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
@@ -4721,6 +4734,12 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		return -EINVAL;
 	}
 
+	/* A pending AOD backlight restore must not race with a fresh enable */
+	cancel_delayed_work_sync(&panel->nolp_bl_delay_work);
+	panel->in_aod = false;
+
+	ea_panel_reset();
+
 	mutex_lock(&panel->panel_lock);
 
 	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ON);
@@ -4790,6 +4809,11 @@ int dsi_panel_disable(struct dsi_panel *panel)
 		pr_err("invalid params\n");
 		return -EINVAL;
 	}
+
+	cancel_delayed_work_sync(&panel->nolp_bl_delay_work);
+	panel->in_aod = false;
+
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 
