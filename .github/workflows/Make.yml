@@ -1,11 +1,17 @@
-name: Start NeRvon
+name: Who fly?
 
 on:
   workflow_dispatch:
 
 jobs:
-  Reforging:
+  Maybe:
     runs-on: ubuntu-latest
+
+    env:
+      TG_TOKEN: ${{ secrets.TG_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+      GITHUB_TG_TOKEN: ${{ secrets.TG_TOKEN }}
+      GITHUB_TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
 
     steps:
     - name: 🔄 Checkout Code
@@ -38,12 +44,14 @@ jobs:
       run: |
         echo "BUILD_DATE='\"$(TZ=Asia/Jakarta date '+%b %d %Y')\"'" >> $GITHUB_ENV
 
+    - name: Setup KSU
+      run: |
+        curl -LSs https://raw.githubusercontent.com/manipvlator/KernelSU/refs/heads/main/kernel/setup.sh | bash -s main
+
     - name: 🛠️ Build Kernel
       run: |
-        curl -LSs "https://raw.githubusercontent.com/manipvlator/KernelSU/refs/heads/main/kernel/setup.sh" | bash -s main
         export ARCH=arm64
         export PATH="$CLANG_PATH/bin:$GCC64_PATH/bin:$GCC32_PATH/bin:$PATH"
-        export KBUILD_COMPILER_STRING="$CLANG_PATH/clang"
         export BUILD_DATE=$BUILD_DATE
         export CFLAGS_EXTRA="-DBUILD_DATE=$BUILD_DATE"
-        bash copyright
+        bash fly
