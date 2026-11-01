@@ -66,6 +66,9 @@
 
 #define BATT_MAX_CHG_VOLT		4400
 #define BATT_FAST_CHG_CURR		5400
+
+/* Hardcode charge current lock (mA). Set to 0 to disable and use default. */
+#define CHARGE_CURRENT_LOCK_MA		2000
 #define	BUS_OVP_THRESHOLD		12000
 #define	BUS_OVP_ALARM_THRESHOLD		9500
 
@@ -96,9 +99,9 @@ enum {
 static struct sys_config sys_config = {
 	.bat_volt_lp_lmt		= BAT_VOLT_LOOP_LMT,
 	.ffc_bat_volt_lmt		= BAT_VOLT_LOOP_LMT,
-	.bat_curr_lp_lmt		= BAT_CURR_LOOP_LMT,
+	.bat_curr_lp_lmt		= CHARGE_CURRENT_LOCK_MA ? CHARGE_CURRENT_LOCK_MA : BAT_CURR_LOOP_LMT,
 	.bus_volt_lp_lmt		= BUS_VOLT_LOOP_LMT,
-	.bus_curr_lp_lmt		= BAT_CURR_LOOP_LMT >> 1,
+	.bus_curr_lp_lmt		= CHARGE_CURRENT_LOCK_MA ? (CHARGE_CURRENT_LOCK_MA >> 1) : (BAT_CURR_LOOP_LMT >> 1),
 
 	.ibus_minus_deviation_val = HVDCP3_IBUS_MINUS_DEV_VAL,
 	.ibus_plus_deviation_val = HVDCP3_IBUS_PLUS_DEV_VAL,
