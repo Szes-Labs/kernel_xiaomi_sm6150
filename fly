@@ -29,7 +29,7 @@ fi
 # ── Build Config ─────────────────────────────────────────────────
 DEVICE="courbet"
 KNAME="Mishiranu"
-VAR="aosp"
+VAR="AOSP"
 ROT="KSU"
 
 ZIPNAME="${KNAME}-${VAR}-${ROT}.zip"
@@ -49,9 +49,9 @@ BUILD_LOG="$KERNEL_DIR/build.log"
 # ── Exports ──────────────────────────────────────────────────────
 export ARCH=arm64
 
-export KBUILD_BUILD_USER="Aciss"
-export KBUILD_BUILD_HOST="NeRv-Company"
-export KBUILD_COMPILER_STRING="Gooner Clang 24.0"
+export KBUILD_BUILD_USER="Szè"
+export KBUILD_BUILD_HOST="Haotian-#09"
+export KBUILD_COMPILER_STRING="Neutron Clang 12.0"
 # export PATH="$CLANG_PATH/bin:$GCC64_PAT
 
 SECONDS=0
