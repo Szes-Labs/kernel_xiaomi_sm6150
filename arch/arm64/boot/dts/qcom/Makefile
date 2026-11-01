@@ -3,7 +3,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 dtbo-$(CONFIG_MACH_XIAOMI_COURBET) += courbet-sdmmagpie-overlay.dtbo
 courbet-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
 endif
-else
+endif
 # SPDX-License-Identifier: GPL-2.0
 ifeq ($(TARGET_BOARD_TYPE),auto)
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
