@@ -1,442 +1,242 @@
-#!/bin/bash
-# ================================================================
-#   Kernel Build Script - courbet
-#   By: Aciss
-# ================================================================
+#!/usr/bin/env bash
 
-# ── Project Directory ────────────────────────────────────────────
-KERNEL_DIR="$(pwd)"
-
-# ── Telegram Config ──────────────────────────────────────────────
-# ── Telegram Config ──────────────────────────────────────────────
-# TG_TOKEN and TG_CHAT_ID are expected to be provided via environment variables.
-# When running in GitHub Actions, set them as secrets (e.g., GITHUB_TG_TOKEN, GITHUB_TG_CHAT_ID)
-# and export them before invoking the script.
-# If they are not set, the script will abort.
-
-if [ -z "$TG_TOKEN" ]; then
-    TG_TOKEN="${TG_TOKEN:-}"  # fallback to GitHub secret env var
-fi
-if [ -z "$TG_CHAT_ID" ]; then
-    TG_CHAT_ID="${TG_CHAT_ID:-}"  # fallback to GitHub secret env var
-fi
-
-if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
-    echo "I GOT YOU"
-    exit 1
-fi
-
-# ── Build Config ─────────────────────────────────────────────────
+KERNEL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEVICE="courbet"
+DEVICE_NAME="Xiaomi Mi 11 Lite"
 KNAME="Mishiranu"
 VAR="AOSP"
 ROT="KSU"
 
-ZIPNAME="${KNAME}-${VAR}-${ROT}.zip"
-
-ANYKERNEL_REPO="https://github.com/Aciss21/AnyKernel3.git"
+ANYKERNEL_REPO="https://github.com/Szetian/AnyKernel3.git"
 ANYKERNEL_BRANCH="master"
 
-# ── Output Paths ─────────────────────────────────────────────────
 OUT="$KERNEL_DIR/out"
-
 KERNEL="$OUT/arch/arm64/boot/Image.gz"
 DTBO="$OUT/arch/arm64/boot/dtbo.img"
 DTB="$OUT/arch/arm64/boot/dtb.img"
-
 BUILD_LOG="$KERNEL_DIR/build.log"
+ZIPNAME="${KNAME}-${VAR}-${ROT}.zip"
 
-# ── Exports ──────────────────────────────────────────────────────
+: "${TG_TOKEN:?TG_TOKEN belum di-set}"
+: "${TG_CHAT_ID:?TG_CHAT_ID belum di-set}"
+
 export ARCH=arm64
-
 export KBUILD_BUILD_USER="Szè"
 export KBUILD_BUILD_HOST="Haotian-#09"
 export KBUILD_COMPILER_STRING="Neutron Clang 12.0"
-# export PATH="$CLANG_PATH/bin:$GCC64_PAT
 
 SECONDS=0
+DOCKER_OS="$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME")"
+DATE="$(TZ=Asia/Jakarta date '+%d %B %Y, %H:%M WIB')"
+COMPILER="$(clang --version 2>/dev/null | head -n1)"
 
-DATE=$(date +"%d %B %Y")
-TIME_START=$(date +"%H:%M:%S")
 
-# ── Telegram Functions ───────────────────────────────────────────
-#
-# Semua pesan Telegram menggunakan <pre>
-# agar tampil monospace.
-#
-
-tg_send_sticky() {
-    local res
-
-    res=$(curl -s -X POST \
-        "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
-        -d "chat_id=${TG_CHAT_ID}" \
-        --data-urlencode "text=<pre>$1</pre>" \
-        -d "parse_mode=HTML")
-
-    MESSAGE_ID=$(echo "$res" | grep -oP '(?<="message_id":)\d+' | head -1)
-
-    if [ -z "$MESSAGE_ID" ]; then
-        echo "Gagal mendapatkan Telegram message ID."
-    fi
+esc() {
+    sed 's/\&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' <<< "$1"
 }
 
-tg_update() {
-    if [ -z "$MESSAGE_ID" ]; then
-        return
+tg_msg() {
+    local response
+
+    if ! response="$(curl -sS \
+        --data-urlencode "chat_id=$TG_CHAT_ID" \
+        --data-urlencode "parse_mode=HTML" \
+        --data-urlencode "disable_web_page_preview=true" \
+        --data-urlencode "text=$1" \
+        "https://api.telegram.org/bot${TG_TOKEN}/sendMessage")"; then
+        echo "[Telegram] Gagal mengirim pesan (curl error)."
+        return 1
     fi
 
-    curl -s -X POST \
-        "https://api.telegram.org/bot${TG_TOKEN}/editMessageText" \
-        -d "chat_id=${TG_CHAT_ID}" \
-        -d "message_id=${MESSAGE_ID}" \
-        --data-urlencode "text=<pre>$1</pre>" \
-        -d "parse_mode=HTML" \
-        > /dev/null
+    if grep -q '"ok"[[:space:]]*:[[:space:]]*true' <<< "$response"; then
+        return 0
+    fi
+
+    echo "[Telegram] Pesan ditolak: $response"
+    return 1
 }
+
+
 
 tg_send_file() {
-    curl -s \
-        -F "document=@$1" \
-        -F "chat_id=$TG_CHAT_ID" \
-        --form-string "caption=<pre>$2</pre>" \
-        -F "parse_mode=HTML" \
+    local file="$1"
+    local caption="$2"
+    local response
+    local filename
+
+    # Resolve absolute path
+    file="$(realpath -e -- "$file")" || {
+        echo "[Telegram] File tidak ditemukan!"
+        return 1
+    }
+
+    if [[ ! -r "$file" ]]; then
+        echo "[Telegram] Cannot Read: $file"
+        return 1
+    fi
+
+    filename="$(basename "$file")"
+
+    # Telegram Bot API limit
+    if (( $(stat -c%s "$file") > 50 * 1024 * 1024 )); then
+        echo "[Telegram] File melebihi batas 50 MB."
+        return 1
+    fi
+
+    echo "[Telegram] Uploading: $filename"
+    echo "[Telegram] Path: $file"
+
+    response=$(curl -sS \
+        -F "chat_id=${TG_CHAT_ID}" \
+        -F "document=@-;filename=${filename}" \
+        --form-string "caption=${caption}" \
+        --form-string "parse_mode=HTML" \
         "https://api.telegram.org/bot${TG_TOKEN}/sendDocument" \
-        > /dev/null
+        < "$file") || {
+            echo "[Telegram] CURL upload failed."
+            return 1
+        }
+
+    if grep -q '"ok"[[:space:]]*:[[:space:]]*true' <<< "$response"; then
+        echo "[Telegram] Upload successful!"
+        return 0
+    fi
+
+    echo "[Telegram] Telegram API Error:"
+    echo "$response"
+    return 1
 }
 
-tg_send_log() {
-    curl -s \
-        -F "document=@$1" \
-        -F "chat_id=$TG_CHAT_ID" \
-        --form-string "caption=<pre>$2</pre>" \
-        -F "parse_mode=HTML" \
-        "https://api.telegram.org/bot${TG_TOKEN}/sendDocument" \
-        > /dev/null
+
+
+duration() {
+    echo "$((SECONDS / 60)) minutes $((SECONDS % 60)) seconds"
 }
 
-# ── Header ───────────────────────────────────────────────────────
+fail() {
+    local reason="$1"
+    local log_file="${2:-}"
 
-echo "================================================"
-echo "       KUDA ASELI NAIL KUDA BESI"
-echo "================================================"
-echo " Device  : $DEVICE"
-echo " Kernel  : $KNAME"
-echo " Variant : $VAR"
-echo " Builder : $KBUILD_BUILD_USER@$KBUILD_BUILD_HOST"
-echo " Output  : $ZIPNAME"
-echo "================================================"
+    local message="<b>Build Failed!</b>
 
-# ── Telegram Build Start ─────────────────────────────────────────
+<b>Device:</b> $DEVICE_NAME ($DEVICE)
+<b>Error:</b> $(esc "$reason")
+<b>Build took:</b> $(duration)"
 
-tg_send_sticky "Kernel Build Started
+    if [[ -n "$log_file" && -f "$log_file" ]]; then
+        tg_send_file "$log_file" "$message" || tg_msg "$message"
+    else
+        tg_msg "$message"
+    fi
 
-Device  : $DEVICE
-Kernel  : $KNAME
-Variant : $VAR
+    exit 1
+}
 
-Builder : $KBUILD_BUILD_USER
-Date    : $DATE
-Start   : $TIME_START
 
-Status  : Starting"
+tg_msg "<b>Kernel Build Triggered</b>
 
-# Pastikan selalu kembali ke root kernel
+<b>Docker OS:</b> $(esc "$DOCKER_OS")
+<b>Date:</b> $DATE
+<b>Device:</b> $DEVICE_NAME
+<b>Codename:</b> $DEVICE
+<b>Kernel Version:</b> $KVER
+<b>Root:</b> $ROT
+<b>Compiler:</b> $(esc "$COMPILER")" || echo "[Telegram] Notifikasi awal gagal."
+
 cd "$KERNEL_DIR" || exit 1
 
-# ── Step 1: Clean ────────────────────────────────────────────────
 
-if [[ "$1" == "-c" || "$1" == "--clean" ]]; then
-
-    echo "[1/4] Cleaning output..."
-
-    tg_update "Kernel Build
-
-Device : $DEVICE
-Kernel : $KNAME
-
-[1/4] Cleaning output
-
-Status  : Removing out"
-
+if [[ "${1:-}" == "-c" || "${1:-}" == "--clean" ]]; then
+    echo "Cleaning output..."
     rm -rf "$OUT"
-
 fi
 
-# ── Step 2: Defconfig ────────────────────────────────────────────
+mkdir -p "$OUT"
+: > "$BUILD_LOG"
 
-echo "[2/4] Loading defconfig..."
 
-echo
-echo "Working directory:"
-pwd
-
-echo
-echo "Defconfig:"
-echo "arch/arm64/configs/vendor/courbet_defconfig"
-echo
-
-tg_update "Kernel Build
-
-Device : $DEVICE
-Kernel : $KNAME
-
-[2/4] Defconfig
-
-Config  : vendor/courbet_defconfig
-Status  : Loading"
+echo "Loading defconfig..."
 
 make O="$OUT" \
     ARCH=arm64 \
     CC=clang \
     CROSS_COMPILE=aarch64-linux-gnu- \
-    vendor/courbet_defconfig
+    vendor/courbet_defconfig 2>&1 | tee -a "$BUILD_LOG"
 
-DEFCONFIG_STATUS=$?
-
-if [ "$DEFCONFIG_STATUS" -ne 0 ]; then
-
-    DURATION="$((SECONDS / 60))m $((SECONDS % 60))s"
-
-    echo
-    echo "Defconfig failed."
-    echo
-
-    tg_update "Kernel Build Failed
-
-Device : $DEVICE
-Kernel : $KNAME
-
-Error  : Defconfig failed
-Time   : $DURATION"
-
-    exit 1
+BUILD_STATUS=${PIPESTATUS[0]}
+if (( BUILD_STATUS != 0 )); then
+    fail "Defconfig failed" "$BUILD_LOG"
 fi
 
-echo "Defconfig loaded successfully."
 
-# ── Step 3: Compile ──────────────────────────────────────────────
+echo "Compiling kernel..."
 
-echo "[3/4] Compiling kernel..."
-
-THREADS=$(nproc --all)
-
-tg_update "Kernel Build
-
-Device : $DEVICE
-Kernel : $KNAME
-
-[3/4] Compile
-
-Threads : $THREADS
-Compiler: Neutron Clang + GCC
-IAS     : LLVM Integrated Assembler
-
-Status  : Building"
-
-rm -f "$BUILD_LOG"
-
-make -j"$THREADS" \
+make -j"$(nproc --all)" \
     O="$OUT" \
     ARCH=arm64 \
     LLVM=1 \
     LLVM_IAS=1 \
     CC=clang \
-    CLANG_TRIPLE="$CLANG_PATH/aarch64-linux-gnu-" \
-    CROSS_COMPILE="$GCC64_PATH/bin/aarch64-elf-" \
-    CROSS_COMPILE_ARM32="$GCC32_PATH/bin/arm-eabi-" \
-    2>&1 | tee "$BUILD_LOG"
+    CLANG_TRIPLE="${CLANG_PATH}/aarch64-linux-gnu-" \
+    CROSS_COMPILE="${GCC64_PATH}/bin/aarch64-elf-" \
+    CROSS_COMPILE_ARM32="${GCC32_PATH}/bin/arm-eabi-" \
+    2>&1 | tee -a "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}
-
-# ── Check Build ──────────────────────────────────────────────────
-
-if [ "$BUILD_STATUS" -ne 0 ] || [ ! -f "$KERNEL" ]; then
-
-    DURATION="$((SECONDS / 60))m $((SECONDS % 60))s"
-
-    echo
-    echo "Build failed."
-    echo "Check: $BUILD_LOG"
-
-    tg_update "Kernel Build Failed
-
-Device : $DEVICE
-Kernel : $KNAME
-
-Error  : Kernel compilation failed
-Time   : $DURATION
-
-Status : Sending build log"
-
-    if [ -f "$BUILD_LOG" ]; then
-
-        tg_send_log "$BUILD_LOG" \
-"Kernel Build Log
-
-Device   : $DEVICE
-Kernel   : $KNAME
-Variant  : $VAR
-Duration : $DURATION"
-
-    fi
-
-    exit 1
+if (( BUILD_STATUS != 0 )) || [[ ! -f "$KERNEL" ]]; then
+    fail "Kernel compilation failed" "$BUILD_LOG"
 fi
 
-echo
-echo "Kernel compiled successfully."
-echo "Image: $KERNEL"
 
-# ── Step 4: Packaging ────────────────────────────────────────────
+echo "Packaging AnyKernel3..."
 
-echo "[4/4] Packaging AnyKernel3..."
+AK_DIR="$KERNEL_DIR/AnyKernel3"
+rm -rf "$AK_DIR"
 
-tg_update "Kernel Build
+git clone -q -b "$ANYKERNEL_BRANCH" "$ANYKERNEL_REPO" "$AK_DIR" \
+    || fail "AnyKernel3 clone failed"
 
-Device : $DEVICE
-Kernel : $KNAME
+sed -i 's/device\.name1=.*/device.name1=courbet/' "$AK_DIR/anykernel.sh"
+sed -i 's/device\.name2=.*/device.name2=courbetin/' "$AK_DIR/anykernel.sh"
 
-[4/4] Packaging
+cp "$KERNEL" "$AK_DIR/"
+[[ -f "$DTBO" ]] && cp "$DTBO" "$AK_DIR/"
+[[ -f "$DTB" ]] && cp "$DTB" "$AK_DIR/"
 
-Status  : Creating ZIP"
-
-# ── Remove Old AnyKernel ─────────────────────────────────────────
-
-if [ -d "$KERNEL_DIR/AnyKernel3" ]; then
-    rm -rf "$KERNEL_DIR/AnyKernel3"
-fi
-
-# ── Clone AnyKernel3 ─────────────────────────────────────────────
-
-git clone -q \
-    "$ANYKERNEL_REPO" \
-    -b "$ANYKERNEL_BRANCH" \
-    "$KERNEL_DIR/AnyKernel3"
-
-AK_STATUS=$?
-
-if [ "$AK_STATUS" -ne 0 ]; then
-
-    DURATION="$((SECONDS / 60))m $((SECONDS % 60))s"
-
-    tg_update "Kernel Build Failed
-
-Device : $DEVICE
-Kernel : $KNAME
-
-Error  : AnyKernel3 clone failed
-Time   : $DURATION"
-
-    exit 1
-fi
-
-# ── Configure AnyKernel3 ─────────────────────────────────────────
-
-sed -i \
-    "s/device\.name1=.*/device.name1=courbet/" \
-    "$KERNEL_DIR/AnyKernel3/anykernel.sh"
-
-sed -i \
-    "s/device\.name2=.*/device.name2=courbetin/" \
-    "$KERNEL_DIR/AnyKernel3/anykernel.sh"
-
-# ── Copy Kernel ──────────────────────────────────────────────────
-
-cp "$KERNEL" \
-    "$KERNEL_DIR/AnyKernel3/"
-
-# ── Copy DTBO ────────────────────────────────────────────────────
-
-if [ -f "$DTBO" ]; then
-    cp "$DTBO" "$KERNEL_DIR/AnyKernel3/"
-fi
-
-# ── Copy DTB ─────────────────────────────────────────────────────
-
-if [ -f "$DTB" ]; then
-    cp "$DTB" "$KERNEL_DIR/AnyKernel3/"
-fi
-
-# ── Create ZIP ───────────────────────────────────────────────────
-
-cd "$KERNEL_DIR/AnyKernel3" || exit 1
-
-zip -r9 \
-    "$KERNEL_DIR/$ZIPNAME" \
-    * \
-    -x "*.git*" \
-    -x "*.github*" \
-    > /dev/null
-
+rm -f "$KERNEL_DIR/$ZIPNAME"
+(
+    cd "$AK_DIR" &&
+    zip -r9 "$KERNEL_DIR/$ZIPNAME" . -x '*.git*' '*.github*' >/dev/null
+)
 ZIP_STATUS=$?
 
-cd "$KERNEL_DIR" || exit 1
+rm -rf "$AK_DIR"
 
-rm -rf "$KERNEL_DIR/AnyKernel3"
+if (( ZIP_STATUS != 0 )) || [[ ! -f "$KERNEL_DIR/$ZIPNAME" ]]; then
+    fail "ZIP creation failed"
+fi
 
-if [ "$ZIP_STATUS" -ne 0 ] || [ ! -f "$KERNEL_DIR/$ZIPNAME" ]; then
 
-    DURATION="$((SECONDS / 60))m $((SECONDS % 60))s"
+SIZE="$(du -h "$KERNEL_DIR/$ZIPNAME" | cut -f1)"
+MD5="$(md5sum "$KERNEL_DIR/$ZIPNAME" | cut -d' ' -f1)"
 
-    tg_update "Kernel Build Failed
+MESSAGE="<b>Build Finished!</b>
 
-Device : $DEVICE
-Kernel : $KNAME
+<b>Device:</b> $DEVICE_NAME ($DEVICE)
+<b>Variant:</b> $ROT
+<b>Package:</b> Flashable AnyKernel3 ZIP
+<b>Size:</b> $SIZE
+<b>Build took:</b> $(duration)
+<b>MD5:</b> <code>$MD5</code>"
 
-Error  : ZIP creation failed
-Time   : $DURATION"
+if ! tg_send_file "$KERNEL_DIR/$ZIPNAME" "$MESSAGE"; then
+    tg_msg "<b>Build complete</b>
 
+<b>Package:</b> $ZIPNAME
+<b>Size:</b> $SIZE
+<b>MD5:</b> <code>$MD5</code>"
     exit 1
 fi
 
-# ── Upload ────────────────────────────────────────────────────────
-
-DURATION="$((SECONDS / 60))m $((SECONDS % 60))s"
-TIME_END=$(date +"%H:%M:%S")
-
 echo
-echo "Build completed."
-echo "Duration: $DURATION"
-
-tg_update "Build Successful
-
-Device : $DEVICE
-Kernel : $KNAME
-Variant : $VAR
-
-File    : $ZIPNAME
-Duration: $DURATION
-
-Status  : Uploading"
-
-# ── Send ZIP ─────────────────────────────────────────────────────
-
-tg_send_file "$KERNEL_DIR/$ZIPNAME" \
-"Kernel Build Complete
-
-Device : $DEVICE
-Kernel : $KNAME
-Variant: $VAR
-
-File     : $ZIPNAME
-Start    : $TIME_START
-Finish   : $TIME_END
-Duration : $DURATION
-
-Builder  : $KBUILD_BUILD_USER
-Host     : $KBUILD_BUILD_HOST"
-
-# ── Done ─────────────────────────────────────────────────────────
-
-echo
-echo "================================================"
-echo " Build Complete"
-echo "================================================"
-echo " Device  : $DEVICE"
-echo " Kernel  : $KNAME"
-echo " Variant : $VAR"
-echo " Output  : $ZIPNAME"
-echo " Duration: $DURATION"
-echo "================================================"
-
+echo "Build complete: $ZIPNAME ($(duration))"
