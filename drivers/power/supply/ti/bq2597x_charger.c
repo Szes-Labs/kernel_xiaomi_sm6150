@@ -35,7 +35,7 @@
 #include <linux/debugfs.h>
 #include <linux/bitops.h>
 #include <linux/math64.h>
-#include <asm/neon.h>
+
 
 #include "bq25970_reg.h"
 
@@ -68,28 +68,34 @@ enum {
 	ADC_MAX_NUM,
 };
 
-static float sc8551_adc_lsb[] = {
-	[ADC_IBUS]	= SC8551_IBUS_ADC_LSB,
-	[ADC_VBUS]	= SC8551_VBUS_ADC_LSB,
-	[ADC_VAC]	= SC8551_VAC_ADC_LSB,
-	[ADC_VOUT]	= SC8551_VOUT_ADC_LSB,
-	[ADC_VBAT]	= SC8551_VBAT_ADC_LSB,
-	[ADC_IBAT]	= SC8551_IBAT_ADC_LSB,
-	[ADC_TBUS]	= SC8551_TSBUS_ADC_LSB,
-	[ADC_TBAT]	= SC8551_TSBAT_ADC_LSB,
-	[ADC_TDIE]	= SC8551_TDIE_ADC_LSB,
+#define ADC_LSB_SCALE 10000
+
+static int sc8551_adc_lsb[] = {
+	[ADC_IBUS]	= 15625,	/* 1.5625 */
+	[ADC_VBUS]	= 3750,		/* 3.75 */
+	[ADC_VAC]	= 5000,		/* 5.0 */
+	[ADC_VOUT]	= 1250,		/* 1.25 */
+#ifdef CONFIG_K9A_CHARGE
+	[ADC_VBAT]	= 12588,	/* 1.25*1.007 */
+#else
+	[ADC_VBAT]	= 12555,	/* 1.25*1.0044 */
+#endif
+	[ADC_IBAT]	= 3125,		/* 3.125 */
+	[ADC_TBUS]	= 10000,	/* 1.0 */
+	[ADC_TBAT]	= 10000,	/* 1.0 */
+	[ADC_TDIE]	= 10000,	/* 1.0 */
 };
 
-static float sc8551_adc_lsb_non_calibrate[] = {
-	[ADC_IBUS]	= SC8551_IBUS_ADC_LSB,
-	[ADC_VBUS]	= SC8551_VBUS_ADC_LSB,
-	[ADC_VAC]	= SC8551_VAC_ADC_LSB,
-	[ADC_VOUT]	= SC8551_VOUT_ADC_LSB,
-	[ADC_VBAT]	= SC8551_VBAT_ADC_LSB_NON_CALIBRATE,
-	[ADC_IBAT]	= SC8551_IBAT_ADC_LSB,
-	[ADC_TBUS]	= SC8551_TSBUS_ADC_LSB,
-	[ADC_TBAT]	= SC8551_TSBAT_ADC_LSB,
-	[ADC_TDIE]	= SC8551_TDIE_ADC_LSB,
+static int sc8551_adc_lsb_non_calibrate[] = {
+	[ADC_IBUS]	= 15625,	/* 1.5625 */
+	[ADC_VBUS]	= 3750,		/* 3.75 */
+	[ADC_VAC]	= 5000,		/* 5.0 */
+	[ADC_VOUT]	= 1250,		/* 1.25 */
+	[ADC_VBAT]	= 1250,		/* 1.25 */
+	[ADC_IBAT]	= 3125,		/* 3.125 */
+	[ADC_TBUS]	= 10000,	/* 1.0 */
+	[ADC_TBAT]	= 10000,	/* 1.0 */
+	[ADC_TDIE]	= 10000,	/* 1.0 */
 };
 
 #define BQ25970_ROLE_STDALONE   0
@@ -1097,12 +1103,10 @@ static int bq2597x_get_adc_data(struct bq2597x *bq, int channel,  int *result)
 	*result = t;
 
 	if (bq->chip_vendor == SC8551) {
-		kernel_neon_begin();
 		if (bq->hw_version == HARDWARE_PLATFORM_COURBET && bq->mass_production)
-			*result = (int)(t * sc8551_adc_lsb_non_calibrate[channel]);
+			*result = (int)((long)t * sc8551_adc_lsb_non_calibrate[channel] / ADC_LSB_SCALE);
 		else
-			*result = (int)(t * sc8551_adc_lsb[channel]);
-		kernel_neon_end();
+			*result = (int)((long)t * sc8551_adc_lsb[channel] / ADC_LSB_SCALE);
 	}
 
 	return 0;
