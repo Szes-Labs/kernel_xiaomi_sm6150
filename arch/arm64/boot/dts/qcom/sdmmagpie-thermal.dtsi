@@ -237,6 +237,31 @@
 		};
 	};
 
+	cpu-big-90c {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&tsens0 5>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			big-cpu-90c: big-cpu-90c {
+				temperature = <90000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+		};
+		cooling-maps {
+			big-cpu-cdev {
+				trip = <&big-cpu-90c>;
+				cooling-device =
+					<&CPU6 THERMAL_MAX_LIMIT
+					 THERMAL_MAX_LIMIT
+					 &CPU7 THERMAL_MAX_LIMIT
+					 THERMAL_MAX_LIMIT>;
+			};
+		};
+	};
+
 	cpuss-0-usr {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
