@@ -59,11 +59,9 @@
 #define pr_debug pr_err
 #endif
 
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 #ifdef pr_info
 #undef pr_info
 #define pr_info pr_err
-#endif
 #endif
 
 #define BATT_MAX_CHG_VOLT		4400
@@ -98,7 +96,7 @@ enum {
 static struct sys_config sys_config = {
 	.bat_volt_lp_lmt		= BAT_VOLT_LOOP_LMT,
 	.ffc_bat_volt_lmt		= BAT_VOLT_LOOP_LMT,
-	.bat_curr_lp_lmt		= BAT_CURR_LOOP_LMT/* + 1000*/,
+	.bat_curr_lp_lmt		= BAT_CURR_LOOP_LMT,
 	.bus_volt_lp_lmt		= BUS_VOLT_LOOP_LMT,
 	.bus_curr_lp_lmt		= BAT_CURR_LOOP_LMT >> 1,
 
@@ -126,7 +124,6 @@ struct cp_qc30_data {
 	bool			cp_sec_enable;
 	bool			qc3p5_supported;
 
-	/* notifiers */
 	struct notifier_block	nb;
 };
 
@@ -135,9 +132,7 @@ static pm_t pm_state;
 
 static int fc2_taper_timer;
 static int ibus_lmt_change_timer;
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 static int reverse_count = 0;
-#endif
 
 static struct power_supply *cp_get_sw_psy(void)
 {
@@ -188,6 +183,13 @@ static struct power_supply *cp_get_fc_psy(void)
 			pm_state.fc_psy = power_supply_get_by_name("bq2597x-master");
 		else
 			pm_state.fc_psy = power_supply_get_by_name("bq2597x-standalone");
+
+		if (!pm_state.fc_psy)
+		{
+			pm_state.fc_psy = power_supply_get_by_name("ln8000");
+			if (!pm_state.fc_psy)
+				pr_err("cp_psy not found\n");
+		}
 	}
 
 	return pm_state.fc_psy;
@@ -232,8 +234,6 @@ static int qc3_get_bms_fastcharge_mode(void)
 	return pval.intval;
 }
 
-
-/* get thermal level from battery power supply property */
 static int qc3_get_batt_current_thermal_level(int *level)
 {
 	int ret, rc;
@@ -258,7 +258,6 @@ static int qc3_get_batt_current_thermal_level(int *level)
 	return rc;
 }
 
-/* determine whether to disable cp according to jeita status */
 static bool qc3_disable_cp_by_jeita_status(void)
 {
 	int batt_temp = 0, bq_input_suspend = 0;
@@ -359,10 +358,6 @@ static void cp_update_fc_status(void)
 	ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_TI_BATTERY_VOLTAGE, &val);
 	if (!ret)
 		pm_state.bq2597x.vbat_volt = val.intval;
-
-	/*ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_TI_BATTERY_CURRENT, &val);
-	if (!ret)
-		pm_state.bq2597x.ibat_curr = val.intval; */
 
 	ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_TI_BUS_VOLTAGE, &val);
 	if (!ret)
@@ -852,7 +847,6 @@ static int cp_flash2_charge(unsigned int port)
 
 	cp_check_fc_enabled();
 
-	/* battery overheat, stop charge */
 	if (pm_state.bq2597x.bat_therm_fault)
 		return -ADC_ERR;
 	else if (pm_state.bq2597x.bus_ocp_fault
@@ -872,12 +866,8 @@ static int cp_flash2_charge(unsigned int port)
 	if (pm_state.bq2597x.vbat_volt > sys_config.bat_volt_lp_lmt - 100 &&
 			pm_state.bq2597x.ibat_curr < sys_config.fc2_taper_current) {
 		if (fc2_taper_timer++ > TAPER_TIMEOUT) {
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 			fc2_taper_timer = 0;
 			pm_state.sw_near_cv = true;
-#else
-			fc2_taper_timer = 0;
-#endif
 			return TAPER_DONE;
 		}
 	} else {
@@ -892,13 +882,10 @@ const unsigned char *pm_state_str[] = {
 	"CP_STATE_DISCONNECT",
 	"CP_STATE_SW_ENTRY",
 	"CP_STATE_SW_ENTRY_2",
-//	"CP_STATE_SW_ENTRY_3",
 	"CP_STATE_SW_LOOP",
 	"CP_STATE_FLASH2_ENTRY",
 	"CP_STATE_FLASH2_ENTRY_1",
-//	"CP_STATE_FLASH2_ENTRY_2",
 	"CP_STATE_FLASH2_ENTRY_3",
-//	"CP_STATE_FLASH2_GET_PPS_STATUS",
 	"CP_STATE_FLASH2_TUNE",
 	"CP_STATE_FLASH2_DELAY",
 	"CP_STATE_STOP_CHARGE",
@@ -1066,17 +1053,17 @@ void cp_statemachine(unsigned int port)
 		}
 
 		cp_get_qc_hvdcp3_type();
-		if (pm_state.hvdcp3_type == HVDCP3_CLASSB_27W) {		// QC3.0 27W
+		if (pm_state.hvdcp3_type == HVDCP3_CLASSB_27W) {
 			sys_config.bat_curr_lp_lmt = HVDCP3_CLASS_B_BAT_CURRENT_MA;
 			sys_config.bus_curr_lp_lmt = HVDCP3_CLASS_B_BUS_CURRENT_MA;
 			pm_state.ibus_lmt_curr = sys_config.bus_curr_lp_lmt;
 			cp_set_qc_bus_protections(HVDCP3_CLASSB_27W);
-		} else if (pm_state.hvdcp3_type == HVDCP3_CLASSA_18W) {		// QC3.0 18W
+		} else if (pm_state.hvdcp3_type == HVDCP3_CLASSA_18W) {
 			sys_config.bat_curr_lp_lmt = HVDCP3_CLASS_A_BAT_CURRENT_MA;
 			sys_config.bus_curr_lp_lmt = HVDCP3_CLASS_A_BUS_CURRENT_MA;
 			pm_state.ibus_lmt_curr = sys_config.bus_curr_lp_lmt;
 			cp_set_qc_bus_protections(HVDCP3_CLASSA_18W);
-		} else if (pm_state.hvdcp3_type == HVDCP3P5_CLASSB_27W) {	// QC3.5 27W
+		} else if (pm_state.hvdcp3_type == HVDCP3P5_CLASSB_27W) {
 			sys_config.ibus_minus_deviation_val = HVDCP3P5_IBUS_MINUS_DEV_VAL;
 			sys_config.ibus_plus_deviation_val = HVDCP3P5_IBUS_PLUS_DEV_VAL;
 			sys_config.ibat_minus_deviation_val = HVDCP3P5_IBAT_MINUS_DEV_VAL;
@@ -1085,7 +1072,7 @@ void cp_statemachine(unsigned int port)
 			sys_config.bus_curr_lp_lmt = HVDCP3P5_CLASS_B_BUS_CURRENT_MA;
 			pm_state.ibus_lmt_curr = sys_config.bus_curr_lp_lmt;
 			cp_set_qc_bus_protections(HVDCP3P5_CLASSB_27W);
-		} else if (pm_state.hvdcp3_type == HVDCP3P5_CLASSA_18W) {	// QC3.5 18W
+		} else if (pm_state.hvdcp3_type == HVDCP3P5_CLASSA_18W) {
 			sys_config.ibus_minus_deviation_val = HVDCP3P5_IBUS_MINUS_DEV_VAL;
 			sys_config.ibus_plus_deviation_val = HVDCP3P5_IBUS_PLUS_DEV_VAL;
 			sys_config.ibat_minus_deviation_val = HVDCP3P5_IBAT_MINUS_DEV_VAL;
@@ -1101,7 +1088,6 @@ void cp_statemachine(unsigned int port)
 
 	case CP_STATE_FLASH2_ENTRY_1:
 		cp_update_fc_status();
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 		if (pm_state.bq2597x.bus_error_status == VBUS_ERROR_LOW ||
 				pm_state.bq2597x.vbus_volt < pm_state.bq2597x.vbat_volt * 2 + 150) {
 			tune_vbus_retry = cp_get_qc_pulse_cnt();
@@ -1112,24 +1098,15 @@ void cp_statemachine(unsigned int port)
 		} else {
 			pr_err("vvbus:%d, tuned above expected voltage, retry_times:%d\n",
 					pm_state.bq2597x.vbus_volt, tune_vbus_retry);
-			cp_move_state(CP_STATE_FLASH2_ENTRY_3);
+			if (pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3 && pm_state.bq2597x.vbus_volt > 11000) {
+				cp_move_state(CP_STATE_SW_ENTRY);
+				cp_limit_sw(false);
+				cp_set_fake_hvdcp3(true);
+			} else {
+				cp_move_state(CP_STATE_FLASH2_ENTRY_3);
+			}
 			break;
 		}
-#else
-		if (pm_state.bq2597x.vbus_volt < (pm_state.bq2597x.vbat_volt * 2 + BUS_VOLT_INIT_UP - 50)) {
-			tune_vbus_retry = cp_get_qc_pulse_cnt();
-			tune_vbus_retry++;
-			cp_tune_vbus_volt(VOLT_UP);
-			pr_info("vbus:%d, retry_times:%d, tuning...\n",
-					pm_state.bq2597x.vbus_volt, tune_vbus_retry);
-		} else {
-			pr_err("vbus:%d, tuned above expected voltage, retry_times:%d\n",
-					pm_state.bq2597x.vbus_volt, tune_vbus_retry);
-			cp_move_state(CP_STATE_FLASH2_ENTRY_3);
-			break;
-		}
-
-#endif
 
 		if (pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3 && tune_vbus_retry == FAKE_HVDCP3_DP_COUNT && pm_state.bq2597x.vbus_volt <= FAKE_HVDCP3_VBUS) {
 			cp_move_state(CP_STATE_SW_ENTRY);
@@ -1148,17 +1125,12 @@ void cp_statemachine(unsigned int port)
 		break;
 
 	case CP_STATE_FLASH2_ENTRY_3:
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
-		if (pm_state.bq2597x.bus_error_status == VBUS_ERROR_HIGH ||
-				pm_state.bq2597x.vbus_volt >
-				pm_state.bq2597x.vbat_volt * 2 + 400) {
+		if (pm_state.bq2597x.bus_error_status == VBUS_ERROR_HIGH) {
 			reverse_count = 0;
-			pr_err("vvbus=%d, too high to open cp switcher, decrease it.\n",
-					pm_state.bq2597x.vbus_volt);
+			pr_err("vvbus=%d, too high to open cp switcher, decrease it.\n", pm_state.bq2597x.vbus_volt);
 			cp_tune_vbus_volt(VOLT_DOWN);
 		} else if (pm_state.bq2597x.bus_error_status == VBUS_ERROR_LOW) {
-			pr_err("vvbus=%d, too low to open cp switcher, increase it.\n",
-					pm_state.bq2597x.vbus_volt);
+			pr_err("vvbus=%d, too low to open cp switcher, increase it.\n", pm_state.bq2597x.vbus_volt);
 			if (pm_state.bq2597x.vbus_volt <= 4500)
 				reverse_count++;
 			if (reverse_count >= 3) {
@@ -1168,16 +1140,8 @@ void cp_statemachine(unsigned int port)
 				cp_move_state(CP_STATE_DISCONNECT);
 			}
 			cp_tune_vbus_volt(VOLT_UP);
-#else
-		if (pm_state.bq2597x.vbus_volt >
-				(pm_state.bq2597x.vbat_volt * 2 + BUS_VOLT_INIT_UP + 200)) {
-			pr_err("vbat volt is too high, wait it down\n");
-			/* voltage is too high, wait for voltage down, keep charge disabled to discharge */
-#endif
 		} else {
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 			reverse_count = 0;
-#endif
 			pr_err("vbat volt is ok, enable flash charging\n");
 			if (!pm_state.bq2597x.charge_enabled) {
 				cp_enable_fc(true);
@@ -1197,13 +1161,11 @@ void cp_statemachine(unsigned int port)
 				}
 			}
 
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 			if (pm_state.bq2597x.charge_enabled) {
 				cp_move_state(CP_STATE_FLASH2_TUNE);
 				cp_enable_sw(false);
 				cp_update_sw_status();
 			}
-#endif
 
 			ibus_lmt_change_timer = 0;
 			fc2_taper_timer = 0;
@@ -1226,7 +1188,7 @@ void cp_statemachine(unsigned int port)
 					ret);
 			recovery = true;
 			cp_move_state(CP_STATE_SW_ENTRY);
-		} else {// normal tune adapter output
+		} else {
 			cp_move_state(CP_STATE_FLASH2_DELAY);
 		}
 		break;
@@ -1265,7 +1227,6 @@ static void cp_workfunc(struct work_struct *work)
 
 	cp_get_usb_present();
 	pr_info("usb_present:%d, usb_type:%d\n", pm_state.usb_present, pm_state.usb_type);
-	/* check whether usb is present */
 	if (pm_state.usb_present == 0) {
 		cp_set_qc_bus_protections(HVDCP3_NONE);
 		cp_set_fake_hvdcp3(false);
@@ -1276,14 +1237,10 @@ static void cp_workfunc(struct work_struct *work)
 	}
 
 	if (pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3) {
-#if defined(CONFIG_K6_CHARGE) || defined(CONFIG_K9A_CHARGE)
 		if (reverse_count)
 			schedule_delayed_work(&pm_state.qc3_pm_work, msecs_to_jiffies(100));
 		else
 			schedule_delayed_work(&pm_state.qc3_pm_work, msecs_to_jiffies(300));
-#else
-		schedule_delayed_work(&pm_state.qc3_pm_work, HZ);
-#endif
 	} else if (pm_state.usb_type == POWER_SUPPLY_TYPE_USB_HVDCP_3P5) {
 		schedule_delayed_work(&pm_state.qc3_pm_work, msecs_to_jiffies(100));
 	}
@@ -1470,3 +1427,4 @@ module_exit(cp_qc30_exit);
 MODULE_AUTHOR("Fei Jiang<jiangfei1@xiaomi.com>");
 MODULE_DESCRIPTION("Xiaomi cp qc30");
 MODULE_LICENSE("GPL");
+
