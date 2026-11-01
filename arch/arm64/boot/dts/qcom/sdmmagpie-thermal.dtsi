@@ -244,7 +244,7 @@
 		thermal-governor = "step_wise";
 		wake-capable-sensor;
 		trips {
-			big-cpu-90c: big-cpu-90c {
+			cpu90c_trip: cpu90c_trip {
 				temperature = <90000>;
 				hysteresis = <2000>;
 				type = "passive";
@@ -252,7 +252,32 @@
 		};
 		cooling-maps {
 			big-cpu-cdev {
-				trip = <&big-cpu-90c>;
+				trip = <&cpu90c_trip>;
+				cooling-device =
+					<&CPU6 THERMAL_MAX_LIMIT
+					 THERMAL_MAX_LIMIT
+					 &CPU7 THERMAL_MAX_LIMIT
+					 THERMAL_MAX_LIMIT>;
+			};
+		};
+	};
+
+	batt-45c {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&pm6150l_adc_tm ADC_AMUX_THM1_PU2>;
+		thermal-governor = "step_wise";
+		wake-capable-sensor;
+		trips {
+			batt45c_trip: batt45c_trip {
+				temperature = <45000>;
+				hysteresis = <3000>;
+				type = "passive";
+			};
+		};
+		cooling-maps {
+			batt45c_cdev {
+				trip = <&batt45c_trip>;
 				cooling-device =
 					<&CPU6 THERMAL_MAX_LIMIT
 					 THERMAL_MAX_LIMIT
