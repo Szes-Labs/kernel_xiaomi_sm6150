@@ -24,6 +24,7 @@
 #include "msm_gem.h"
 #include "msm_fence.h"
 #include "sde_trace.h"
+#include "xiaomi_frame_stat.h"
 
 #define MULTIPLE_CONN_DETECTED(x) (x > 1)
 
@@ -595,6 +596,7 @@ static void complete_commit(struct msm_commit *c)
 	struct drm_device *dev = state->dev;
 	struct msm_drm_private *priv = dev->dev_private;
 	struct msm_kms *kms = priv->kms;
+	ktime_t commit_start = ktime_get();
 
 	drm_atomic_helper_wait_for_fences(dev, state, false);
 
@@ -626,6 +628,8 @@ static void complete_commit(struct msm_commit *c)
 	kms->funcs->complete_commit(kms, state);
 
 	drm_atomic_state_put(state);
+
+	frame_stat_collector(ktime_us_delta(ktime_get(), commit_start), COMMIT_END_TS);
 
 	commit_destroy(c);
 }

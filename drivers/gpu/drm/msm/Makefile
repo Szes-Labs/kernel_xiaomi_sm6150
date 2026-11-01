@@ -221,6 +221,7 @@ msm_drm-$(CONFIG_DRM_MSM) += \
 	msm_ringbuffer.o \
 	msm_prop.o \
 	msm_fence.o \
-	msm_debugfs.o
+	msm_debugfs.o \
+	xiaomi_frame_stat.o
 
 obj-$(CONFIG_DRM_MSM)	+= msm_drm.o

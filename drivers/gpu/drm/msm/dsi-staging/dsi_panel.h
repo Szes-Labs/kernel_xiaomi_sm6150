@@ -89,6 +89,9 @@ struct dsi_dfps_capabilities {
 	u32 *dfps_list;
 	u32 dfps_list_len;
 	bool dfps_support;
+	/* smart fps control */
+	bool smart_fps_support;
+	u32 smart_fps_value;
 };
 
 struct dsi_dyn_clk_caps {
@@ -217,6 +220,7 @@ struct dsi_panel {
 	struct dsi_cmd_engine_cfg cmd_config;
 	enum dsi_op_mode panel_mode;
 	bool panel_mode_switch_enabled;
+	bool panel_max_frame_rate;
 
 	struct dsi_dfps_capabilities dfps_caps;
 	struct dsi_dyn_clk_caps dyn_clk_caps;

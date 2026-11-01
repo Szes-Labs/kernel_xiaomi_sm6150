@@ -255,6 +255,7 @@
 
 	/* Support FPS switch */
 	qcom,mdss-dsi-panel-mode-switch;
+	qcom,mdss-dsi-pan-enable-smart-fps;
 
 	/* Support display feature command */
 	qcom,dispparam-enabled;

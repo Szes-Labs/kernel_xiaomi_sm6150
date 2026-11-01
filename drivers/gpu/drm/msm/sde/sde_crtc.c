@@ -43,6 +43,10 @@
 #include "sde_core_perf.h"
 #include "sde_trace.h"
 #include "dsi_display.h"
+#include "xiaomi_frame_stat.h"
+
+struct drm_crtc *gcrtc;
+bool idle_status;
 
 #define SDE_PSTATES_MAX (SDE_STAGE_MAX * 4)
 #define SDE_MULTIRECT_PLANE_MAX (SDE_STAGE_MAX * 2)
@@ -3831,8 +3835,10 @@ static void sde_crtc_atomic_begin(struct drm_crtc *crtc,
 	/* cancel the idle notify delayed work */
 	if (sde_encoder_check_curr_mode(sde_crtc->mixers[0].encoder,
 					MSM_DISPLAY_VIDEO_MODE) &&
-		kthread_cancel_delayed_work_sync(&sde_crtc->idle_notify_work))
+		kthread_cancel_delayed_work_sync(&sde_crtc->idle_notify_work)) {
+		idle_status = false;
 		SDE_DEBUG("idle notify work cancelled\n");
+	}
 
 	/*
 	 * Since CP properties use AXI buffer to program the
@@ -3935,6 +3941,7 @@ static void sde_crtc_atomic_flush(struct drm_crtc *crtc,
 		sde_plane_restore(plane);
 
 	/* wait for acquire fences before anything else is done */
+	frame_stat_collector(0, GET_INPUT_FENCE_TS);
 	_sde_crtc_wait_for_fences(crtc);
 
 	/* schedule the idle notify delayed work */
@@ -3969,6 +3976,7 @@ static void sde_crtc_atomic_flush(struct drm_crtc *crtc,
 	}
 
 	/* Kickoff will be scheduled by outer layer */
+	gcrtc = crtc;
 	SDE_ATRACE_END("sde_crtc_atomic_flush");
 }
 
@@ -6968,7 +6976,7 @@ static void __sde_crtc_idle_notify_work(struct kthread_work *work)
 		event.length = sizeof(u32);
 		msm_mode_object_event_notify(&crtc->base, crtc->dev,
 				&event, (u8 *)&ret);
-
+		idle_status = true;
 		SDE_DEBUG("crtc[%d]: idle timeout notified\n", crtc->base.id);
 	}
 }

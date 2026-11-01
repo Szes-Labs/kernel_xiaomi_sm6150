@@ -54,7 +54,7 @@
 #define DEFAULT_PANEL_PREFILL_LINES	25
 #define TICKS_IN_MICRO_SECOND		1000000
 
-static struct dsi_panel *g_panel;
+struct dsi_panel *g_panel;
 
 enum dsi_dsc_ratio_type {
 	DSC_8BPC_8BPP,
@@ -1662,6 +1662,10 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 		goto error;
 	}
 	dfps_caps->dfps_support = true;
+
+	/* smart fps control */
+	dfps_caps->smart_fps_support = utils->read_bool(utils->data,
+		"qcom,mdss-dsi-pan-enable-smart-fps");
 
 	/* calculate max and min fps */
 	dfps_caps->max_refresh_rate = dfps_caps->dfps_list[0];
