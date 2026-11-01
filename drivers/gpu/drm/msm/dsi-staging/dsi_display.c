@@ -7852,14 +7852,6 @@ int dsi_display_enable(struct dsi_display *display)
 		/* If Display Stream Compression is required, update params. */
 		if (mode->priv_info->dsc_enabled) {
 			mode->priv_info->dsc.pic_width *= display->ctrl_count;
-
-			/* Soft reset DSI PHY to recover from bad controller state */
-			rc = dsi_ctrl_phy_sw_reset(display->ctrl[0].ctrl);
-			if (rc)
-				pr_warn("[%s] DSI PHY soft reset failed: %d\n",
-					display->name, rc);
-			msleep(50);
-
 			rc = dsi_panel_update_pps(display->panel);
 			if (rc)
 				pr_warn("[%s] Cannot update PPS: %d\n",
@@ -7901,14 +7893,6 @@ int dsi_display_enable(struct dsi_display *display)
 
 	if (mode->priv_info->dsc_enabled) {
 		mode->priv_info->dsc.pic_width *= display->ctrl_count;
-
-		/* Soft reset DSI PHY to recover from bad controller state */
-		rc = dsi_ctrl_phy_sw_reset(display->ctrl[0].ctrl);
-		if (rc)
-			pr_warn("[%s] DSI PHY soft reset failed: %d\n",
-				display->name, rc);
-		msleep(50);
-
 		rc = dsi_panel_update_pps(display->panel);
 		if (rc) {
 			pr_err("[%s] panel pps cmd update failed, rc=%d\n",
@@ -7986,21 +7970,6 @@ int dsi_display_post_enable(struct dsi_display *display)
 	if (display->config.panel_mode == DSI_OP_CMD_MODE)
 		dsi_display_clk_ctrl(display->dsi_clk_handle,
 			DSI_ALL_CLKS, DSI_CLK_OFF);
-
-	/* Restore backlight level after ESD recovery */
-	if (display->panel->bl_config.bl_level) {
-		u32 bl_scale = display->panel->bl_config.bl_scale;
-		u32 bl_scale_ad = display->panel->bl_config.bl_scale_ad;
-		u64 bl_temp;
-
-		bl_temp = display->panel->bl_config.bl_level * bl_scale /
-			MAX_BL_SCALE_LEVEL;
-		bl_temp = (u32)bl_temp * bl_scale_ad / MAX_AD_BL_SCALE_LEVEL;
-		rc = dsi_panel_set_backlight(display->panel, (u32)bl_temp);
-		if (rc)
-			pr_err("[%s] failed to restore backlight after recovery, rc=%d\n",
-			       display->name, rc);
-	}
 
 #ifdef CONFIG_MACH_XIAOMI_SWEET
 	dsi_panel_gamma_mode_change(display->panel, display->panel->cur_mode);
