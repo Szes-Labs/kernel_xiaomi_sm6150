@@ -86,25 +86,28 @@ tg_send_file() {
     echo "[Telegram] Uploading: $filename"
     echo "[Telegram] Path: $file"
 
+    # Pass the file path quoted so paths containing spaces work, and keep
+    # the caption out of the multipart request: mixing a long, multi-line
+    # caption into the same request can make Telegram reject the upload.
     response=$(curl -sS \
         -F "chat_id=${TG_CHAT_ID}" \
-        -F "document=@-;filename=${filename}" \
-        --form-string "caption=${caption}" \
-        --form-string "parse_mode=HTML" \
-        "https://api.telegram.org/bot${TG_TOKEN}/sendDocument" \
-        < "$file") || {
+        -F "document=@\"${file}\";filename=${filename}" \
+        "https://api.telegram.org/bot${TG_TOKEN}/sendDocument") || {
             echo "[Telegram] CURL upload failed."
             return 1
         }
 
     if grep -q '"ok"[[:space:]]*:[[:space:]]*true' <<< "$response"; then
         echo "[Telegram] Upload successful!"
-        return 0
+    else
+        echo "[Telegram] Telegram API Error:"
+        echo "$response"
+        return 1
     fi
 
-    echo "[Telegram] Telegram API Error:"
-    echo "$response"
-    return 1
+    # Deliver the caption as a separate message after the file is up.
+    tg_msg "$caption" || echo "[Telegram] Caption message gagal, file sudah terkirim."
+    return 0
 }
 
 
