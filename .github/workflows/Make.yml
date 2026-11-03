@@ -30,8 +30,6 @@ jobs:
     - name: 🔧 Clone Toolchains
       run: |
         mkdir clang && cd clang && curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman" && chmod a+x antman && ./antman -S && ./antman --patch=glibc && cd ..
-        git clone https://github.com/greenforce-project/gcc-arm64 -b main --depth=1 gcc64
-        git clone https://github.com/greenforce-project/gcc-arm -b main --depth=1 gcc32
 
     - name: ⚙️ Setup Environment
       run: |
@@ -51,7 +49,7 @@ jobs:
     - name: 🛠️ Build Kernel
       run: |
         export ARCH=arm64
-        export PATH="$CLANG_PATH/bin:$GCC64_PATH/bin:$GCC32_PATH/bin:$PATH"
+        export PATH="$CLANG_PATH/bin:$PATH"
         export BUILD_DATE=$BUILD_DATE
         export CFLAGS_EXTRA="-DBUILD_DATE=$BUILD_DATE"
         bash fly
