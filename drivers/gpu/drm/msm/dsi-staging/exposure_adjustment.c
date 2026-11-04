@@ -20,14 +20,21 @@
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/notifier.h>
+#include <linux/mutex.h>
 
 #include "dsi_display.h"
 #include "dsi_panel.h"
 #include "../sde/sde_crtc.h"
 #include "../sde/sde_plane.h"
+#include "../sde/sde_color_processing.h"
 #include "exposure_adjustment.h"
 
+static DEFINE_MUTEX(ea_lock);
+
 static bool pcc_backlight_enable = false;
+static bool pcc_applied;
+static struct dsi_panel *ea_panel;
+static struct drm_crtc *ea_crtc;
 static u32 last_level = ELVSS_OFF_THRESHOLD;
 
 static int ea_panel_send_pcc(u32 bl_lvl)
@@ -84,12 +91,53 @@ static int ea_panel_send_pcc(u32 bl_lvl)
 	pr_debug("DSPP Blob ID %d has length %zu\n",
 			prop->base.id, blob->length);
 
-	rc = sde_cp_crtc_set_property(crtc, prop, blob->base.id);
+	/*
+	 * While the dimming is active this driver owns the PCC block, so use
+	 * the owner-aware setter: a plain sde_cp_crtc_set_property() call
+	 * would be dropped by the color processing layer as an unwanted
+	 * update from another caller.
+	 */
+	rc = sde_cp_crtc_set_property_ea(crtc, prop, blob->base.id);
+	/*
+	 * sde_cp_crtc_set_property_ea() takes its own reference on the blob
+	 * when it stores it in the property node, so the reference returned
+	 * by drm_property_create_blob() has to be dropped here.  Without this
+	 * every PCC update leaks a blob and the kernel slowly runs out of
+	 * memory while the anti-flicker feature is in use.
+	 */
+	drm_property_blob_put(blob);
 	if (rc) {
 		pr_err("DSPP: Cannot set PCC: %d.\n", rc);
 	}
 
+	mutex_lock(&ea_lock);
+	pcc_applied = !rc;
+	ea_crtc = crtc;
+	mutex_unlock(&ea_lock);
+
 	return rc;
+}
+
+/*
+ * While the anti-flicker dimming is in effect the backlight is pinned at
+ * ELVSS_OFF_THRESHOLD and the PCC block carries the actual brightness, so a
+ * PCC update coming from anybody else (the composer re-sends its own PCC blob
+ * when the display is rotated) would replace the dimming coefficients and
+ * leave the panel at the pinned level until the next backlight update.  Tell
+ * the color processing layer to drop those updates while this driver owns the
+ * block; the driver's own updates go through sde_cp_crtc_set_property_ea().
+ */
+bool ea_panel_pcc_is_dim_active(struct drm_crtc *crtc)
+{
+	bool active;
+
+	mutex_lock(&ea_lock);
+	active = pcc_backlight_enable && pcc_applied && ea_crtc == crtc &&
+			last_level && last_level < ELVSS_OFF_THRESHOLD &&
+			ea_panel && ea_panel->panel_initialized;
+	mutex_unlock(&ea_lock);
+
+	return active;
 }
 
 bool ea_panel_is_enabled(void)
@@ -99,6 +147,10 @@ bool ea_panel_is_enabled(void)
 
 void ea_panel_mode_ctrl(struct dsi_panel *panel, bool enable)
 {
+	mutex_lock(&ea_lock);
+	ea_panel = panel;
+	mutex_unlock(&ea_lock);
+
 	if (pcc_backlight_enable != enable) {
 		pcc_backlight_enable = enable;
 		pr_debug("Recover backlight level = %d\n", last_level);

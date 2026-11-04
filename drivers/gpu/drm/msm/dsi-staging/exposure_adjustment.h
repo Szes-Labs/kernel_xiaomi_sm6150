@@ -20,6 +20,8 @@
 #ifndef EXPOSURE_ADJUSTMENT_H
 #define EXPOSURE_ADJUSTMENT_H
 
+struct drm_crtc;
+
 /**
  * Device-specific parameters
  * Modify these when porting
@@ -38,12 +40,17 @@
 #ifdef CONFIG_EXPOSURE_ADJUSTMENT
 void ea_panel_mode_ctrl(struct dsi_panel *panel, bool enable);
 bool ea_panel_is_enabled(void);
+bool ea_panel_pcc_is_dim_active(struct drm_crtc *crtc);
 u32 ea_panel_calc_backlight(u32 bl_lvl);
 #else
 static inline void ea_panel_mode_ctrl(struct dsi_panel *panel, bool enable)
 {
 }
 static inline bool ea_panel_is_enabled(void)
+{
+    return false;
+}
+static inline bool ea_panel_pcc_is_dim_active(struct drm_crtc *crtc)
 {
     return false;
 }
