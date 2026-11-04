@@ -1,4 +1,4 @@
-name: fly?
+name: Who fly?
 
 on:
   workflow_dispatch:
