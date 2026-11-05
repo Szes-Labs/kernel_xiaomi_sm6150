@@ -20,6 +20,7 @@
 #include <linux/bitops.h>
 #include <linux/errno.h>
 #include <linux/backlight.h>
+#include <linux/workqueue.h>
 #include <drm/drm_panel.h>
 #include <drm/msm_drm.h>
 
@@ -263,7 +264,18 @@ struct dsi_panel {
 	bool doze_enabled;
 	enum dsi_doze_mode_type doze_mode;
 
+	/*
+	 * While the panel is in AOD the doze command owns the DBV register, so
+	 * the normal backlight level has to be kept aside and restored once the
+	 * panel has left AOD (LP1/LP2 -> NOLP).
+	 */
+	bool in_aod;
+	u32 last_bl_lvl;
+	struct delayed_work nolp_bl_delay_work;
+
 	int hbm_mode;
+	bool f4_51_ctrl_flag;
+	u32 hbm_off_51_index;
 	bool resend_ea;
 
 	struct brightness_alpha_pair *fod_dim_lut;

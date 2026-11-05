@@ -18,6 +18,8 @@
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/pwm.h>
+#include <linux/workqueue.h>
+#include <linux/jiffies.h>
 #include <video/mipi_display.h>
 
 #include "dsi_panel.h"
@@ -815,6 +817,8 @@ int dsi_panel_set_doze_status(struct dsi_panel *panel, bool status) {
 		return 0;
 
 	panel->doze_enabled = status;
+	if (status && dsi_panel_is_type_oled(panel))
+		panel->in_aod = true;
 
 	return dsi_panel_update_doze(panel);
 }
@@ -875,6 +879,21 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 
 	pr_debug("backlight type:%d lvl:%d\n", bl->type, bl_lvl);
 
+	if (bl_lvl)
+		panel->last_bl_lvl = bl_lvl;
+
+	/*
+	 * The doze command is in charge of the DBV register while the panel is
+	 * in AOD. Writing the normal backlight here would both override the AOD
+	 * level and race with the resume of the video stream on wake, which
+	 * shows up as a brightness flash. Keep the level around instead and let
+	 * nolp_backlight_delayed_work() apply it after the panel left AOD.
+	 */
+	if (panel->in_aod && bl_lvl) {
+		pr_debug("in aod, skip set backlight: %d\n", bl_lvl);
+		return 0;
+	}
+
 	if (bl_lvl > 0)
 		bl_lvl = ea_panel_calc_backlight(bl_lvl < bl_dc_min ? bl_dc_min : bl_lvl);
 
@@ -900,6 +919,29 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 	}
 
 	return rc;
+}
+
+/*
+ * Wait a couple of frames after leaving AOD before touching the DBV register,
+ * so that the video stream is running again when the normal backlight level is
+ * programmed.
+ */
+#define NOLP_BL_DELAY_MS	30
+
+static void nolp_backlight_delayed_work(struct work_struct *work)
+{
+	struct dsi_panel *panel = container_of(work, struct dsi_panel,
+					       nolp_bl_delay_work.work);
+
+	mutex_lock(&panel->panel_lock);
+	panel->in_aod = false;
+
+	if (panel->panel_initialized && panel->last_bl_lvl) {
+		pr_debug("restore backlight level %u\n", panel->last_bl_lvl);
+		dsi_panel_set_backlight(panel, panel->last_bl_lvl);
+	}
+
+	mutex_unlock(&panel->panel_lock);
 }
 
 static u32 dsi_panel_get_brightness(struct dsi_backlight_config *bl)
@@ -2566,6 +2608,19 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 	panel->bl_config.xiaomi_f4_41_flag = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-bl-xiaomi-f4-41-flag");
 
+	panel->f4_51_ctrl_flag = utils->read_bool(utils->data,
+			"qcom,dispparam-f4-51-ctrl-flag");
+	if (panel->f4_51_ctrl_flag) {
+		rc = utils->read_u32(utils->data,
+				"qcom,mdss-dsi-panel-hbm-off-51-index",
+				&panel->hbm_off_51_index);
+		if (rc) {
+			panel->hbm_off_51_index = 0;
+			pr_debug("[%s] hbm-off-51-index unspecified\n",
+					panel->name);
+		}
+	}
+
 	panel->bl_config.bl_remap_flag = utils->read_bool(utils->data,
 			"qcom,mdss-brightness-remap");
 
@@ -3731,6 +3786,9 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	panel->doze_mode = DSI_DOZE_LPM;
 	panel->doze_enabled = false;
 
+	INIT_DELAYED_WORK(&panel->nolp_bl_delay_work,
+			  nolp_backlight_delayed_work);
+
 	panel->power_mode = SDE_MODE_DPMS_OFF;
 
 	g_panel = panel;
@@ -4377,6 +4435,7 @@ exit:
 int dsi_panel_set_nolp(struct dsi_panel *panel)
 {
 	int rc = 0;
+	bool restore_backlight = false;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4409,8 +4468,15 @@ int dsi_panel_set_nolp(struct dsi_panel *panel)
 	rc = dsi_panel_set_doze_status(panel, false);
 	if (rc)
 		pr_err("unable to set doze off\n");
+
+	restore_backlight = panel->in_aod && panel->last_bl_lvl;
 exit:
 	mutex_unlock(&panel->panel_lock);
+
+	if (restore_backlight)
+		schedule_delayed_work(&panel->nolp_bl_delay_work,
+				      msecs_to_jiffies(NOLP_BL_DELAY_MS));
+
 	return rc;
 }
 
@@ -4915,8 +4981,14 @@ int dsi_panel_apply_hbm_mode(struct dsi_panel *panel)
 		DSI_CMD_SET_DISP_HBM_ON
 	};
 
+	struct dsi_panel_cmd_set *set;
+	struct dsi_cmd_desc *cmd;
+	u8 *tx_buf;
 	enum dsi_cmd_set_type type;
 	int rc;
+
+	if (!panel || !panel->cur_mode)
+		return -EINVAL;
 
 	if (panel->hbm_mode >= 0 &&
 		panel->hbm_mode < ARRAY_SIZE(type_map))
@@ -4925,6 +4997,20 @@ int dsi_panel_apply_hbm_mode(struct dsi_panel *panel)
 		type = type_map[0];
 
 	mutex_lock(&panel->panel_lock);
+
+	if (type == DSI_CMD_SET_DISP_HBM_OFF && panel->f4_51_ctrl_flag) {
+		set = &panel->cur_mode->priv_info->cmd_sets[type];
+		if (set->cmds && set->count > panel->hbm_off_51_index) {
+			cmd = &set->cmds[panel->hbm_off_51_index];
+			tx_buf = (u8 *)cmd->msg.tx_buf;
+			if (tx_buf && cmd->msg.tx_len >= 3 &&
+					tx_buf[0] == 0x51) {
+				tx_buf[1] = (panel->last_bl_lvl >> 8) & 0x07;
+				tx_buf[2] = panel->last_bl_lvl & 0xff;
+			}
+		}
+	}
+
 	rc = dsi_panel_tx_cmd_set(panel, type);
 	mutex_unlock(&panel->panel_lock);
 
