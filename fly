@@ -164,7 +164,7 @@ make O="$OUT" \
     ARCH=arm64 \
     CC=clang \
     CROSS_COMPILE=aarch64-linux-gnu- \
-    vendor/courbet_defconfig 2>&1 | tee -a "$BUILD_LOG"
+    courbet_defconfig 2>&1 | tee -a "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}
 if (( BUILD_STATUS != 0 )); then
