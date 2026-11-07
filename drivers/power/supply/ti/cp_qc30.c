@@ -54,15 +54,16 @@
 
 #include "cp_qc30.h"
 
-#ifdef pr_debug
-#undef pr_debug
-#define pr_debug pr_err
-#endif
-
-#ifdef pr_info
-#undef pr_info
-#define pr_info pr_err
-#endif
+/*
+ * NOTE: pr_info/pr_debug are used at high frequency from the QC3 PM
+ * state machine (cp_workfunc runs every 100-300 ms while a QC3 adapter
+ * is connected, and again on every property change from the psy
+ * notifier).  Historically both were redirected to pr_err, which
+ * caused massive dmesg spam during any QC3 charging session and made
+ * thermal / battery state monitoring much harder to use.  Leave the
+ * original log levels in place so that routine information is not
+ * printed as an error.
+ */
 
 #define BATT_MAX_CHG_VOLT		4400
 #define BATT_FAST_CHG_CURR		5400
@@ -236,26 +237,25 @@ static int qc3_get_bms_fastcharge_mode(void)
 
 static int qc3_get_batt_current_thermal_level(int *level)
 {
-	int ret, rc;
+	int ret;
 	struct power_supply *psy;
 	union power_supply_propval val = {0,};
 
 	psy = cp_get_sw_psy();
 	if (!psy)
-		return 0;
+		return -ENODEV;
 
 	ret = power_supply_get_property(psy,
 			POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT, &val);
-
-	if (rc < 0) {
-		pr_info("Couldn't get themal level:%d\n", rc);
-		return rc;
+	if (ret < 0) {
+		pr_info("Couldn't get thermal level:%d\n", ret);
+		return ret;
 	}
 
-	pr_err("val.intval: %d\n", val.intval);
+	pr_debug("val.intval: %d\n", val.intval);
 
 	*level = val.intval;
-	return rc;
+	return ret;
 }
 
 static bool qc3_disable_cp_by_jeita_status(void)
