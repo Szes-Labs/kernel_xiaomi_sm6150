@@ -181,8 +181,8 @@ make -j"$(nproc --all)" \
     LLVM_IAS=1 \
     CC=clang \
     CLANG_TRIPLE="${CLANG_PATH}/aarch64-linux-gnu-" \
-    CROSS_COMPILE="${GCC64_PATH}/bin/aarch64-elf-" \
-    CROSS_COMPILE_ARM32="${GCC32_PATH}/bin/arm-eabi-" \
+    CROSS_COMPILE=aarch64-linux-gnu- \
+    CROSS_COMPILE_ARM32=aarch64-linux-gnu- \
     2>&1 | tee -a "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}
