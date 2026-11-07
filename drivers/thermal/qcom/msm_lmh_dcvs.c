@@ -64,7 +64,7 @@
 #define LIMITS_TEMP_DEFAULT		75000
 #define LIMITS_TEMP_HIGH_THRESH_MAX	120000
 #define LIMITS_LOW_THRESHOLD_OFFSET	500
-#define LIMITS_POLLING_DELAY_MS		10
+#define LIMITS_POLLING_DELAY_MS		4
 #define LIMITS_CLUSTER_REQ_OFFSET	0x704
 #define LIMITS_CLUSTER_INT_CLR_OFFSET	0x8
 #define LIMITS_CLUSTER_MIN_FREQ_OFFSET	0x3C0
@@ -190,6 +190,7 @@ static unsigned long limits_mitigation_notify(struct limits_dcvs_hw *hw)
 	if (max_cpu_ct == cpumask_weight(&hw->core_map))
 		max_limit = max_cpu_limit;
 	sched_update_cpu_freq_min_max(&hw->core_map, 0, max_limit);
+	arch_set_max_thermal_scale(&hw->core_map, max_limit);
 	pr_debug("CPU:%d max limit:%lu\n", cpumask_first(&hw->core_map),
 			max_limit);
 	trace_lmh_dcvs_freq(cpumask_first(&hw->core_map), max_limit);
@@ -762,10 +763,10 @@ static int limits_dcvs_probe(struct platform_device *pdev)
 		goto probe_exit;
 	}
 	limits_isens_vref_ldo_init(pdev, hw);
+	sysfs_attr_init(&hw->lmh_freq_attr.attr);
 	hw->lmh_freq_attr.attr.name = "lmh_freq_limit";
 	hw->lmh_freq_attr.show = lmh_freq_limit_show;
 	hw->lmh_freq_attr.attr.mode = 0444;
-	sysfs_attr_init(&hw->lmh_freq_attr.attr);
 	device_create_file(&pdev->dev, &hw->lmh_freq_attr);
 
 probe_exit:
