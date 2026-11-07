@@ -1192,7 +1192,26 @@ And public attribution of xiaomi platforms(like F3 and so and)
 	};
 
 	quiet-therm-step {
-		disable-thermal-zone;
+		/*
+		 * Do not disable the quiet-therm-step zone.
+		 * It is the primary battery / skin thermal governor:
+		 *
+		 *   - batt_trip0   43C  (modem_skin cooling)
+		 *   - batt_trip1   45C
+		 *   - batt_trip2   47C
+		 *   - modem_trip0  48C
+		 *   - gold_trip    50C  (CPU6/CPU7 silver throttle)
+		 *   - silver_trip  54C  (CPU0-5 throttle)
+		 *   - skin_gpu     52C  (GPU throttle)
+		 *   - modem_trip3  58C
+		 *
+		 * The upstream sdmmagpie-thermal.dtsi defines this zone with
+		 * step_wise governor; only the xiaomi courbet overlay disables
+		 * it. Without it, battery temp (the one the user actually
+		 * feels, ~39-45C in the dmesg) is never throttled, only the
+		 * SoC-die-based trip at 110-125C is - hence the overheating.
+		 * Re-enable the zone so battery / skin cooling kicks in early.
+		 */
 	};
 };
 
