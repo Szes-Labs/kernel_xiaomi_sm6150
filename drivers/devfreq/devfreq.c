@@ -285,8 +285,19 @@ int update_devfreq(struct devfreq *devfreq)
 		flags |= DEVFREQ_FLAG_LEAST_UPPER_BOUND; /* Use LUB */
 	}
 
-	if (devfreq->profile->get_cur_freq)
+	if (devfreq->profile->get_cur_freq) {
+		cur_freq = devfreq->previous_freq;
 		devfreq->profile->get_cur_freq(devfreq->dev.parent, &cur_freq);
+		/*
+		 * Some drivers (e.g. kgsl_busmon_get_cur_freq) never populate
+		 * *freq and return 0. Clamp to the valid range so callers and
+		 * sysfs (cur_freq_show) do not report unsigned garbage.
+		 */
+		if (devfreq->min_freq && cur_freq < devfreq->min_freq)
+			cur_freq = devfreq->min_freq;
+		if (devfreq->max_freq && cur_freq > devfreq->max_freq)
+			cur_freq = devfreq->max_freq;
+	}
 	else
 		cur_freq = devfreq->previous_freq;
 
@@ -1078,9 +1089,21 @@ static ssize_t cur_freq_show(struct device *dev, struct device_attribute *attr,
 	unsigned long freq;
 	struct devfreq *devfreq = to_devfreq(dev);
 
-	if (devfreq->profile->get_cur_freq &&
-		!devfreq->profile->get_cur_freq(devfreq->dev.parent, &freq))
+	if (devfreq->profile->get_cur_freq) {
+		/*
+		 * kgsl_busmon_get_cur_freq() returns 0 without filling *freq,
+		 * and other drivers may return an error. Fall back to the
+		 * last known good value and clamp it to the valid range so we
+		 * never print an unsigned-garbage number.
+		 */
+		if (devfreq->profile->get_cur_freq(devfreq->dev.parent, &freq))
+			freq = devfreq->previous_freq;
+		if (devfreq->min_freq && freq < devfreq->min_freq)
+			freq = devfreq->min_freq;
+		if (devfreq->max_freq && freq > devfreq->max_freq)
+			freq = devfreq->max_freq;
 		return sprintf(buf, "%lu\n", freq);
+	}
 
 	return sprintf(buf, "%lu\n", devfreq->previous_freq);
 }

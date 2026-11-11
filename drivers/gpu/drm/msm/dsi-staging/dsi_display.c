@@ -7386,21 +7386,8 @@ int dsi_display_prepare(struct dsi_display *display)
 
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
 		if (display->is_cont_splash_enabled) {
-			pr_err("DMS is not supposed to be set on first frame, "
-			       "%s\n",
-			       display->config.panel_mode == DSI_OP_CMD_MODE ?
-			       "but command mode can handle it. Let's go!" :
-			       "video mode cannot handle it. Bailing out.");
-			if (display->config.panel_mode == DSI_OP_VIDEO_MODE) {
-				rc = -EINVAL;
-				goto error;
-			}
-		} else {
-			/* update dsi ctrl for new mode */
-			rc = dsi_display_pre_switch(display);
-			if (rc)
-				pr_err("[%s] panel pre-prepare-res-switch failed, rc=%d\n",
-						display->name, rc);
+			pr_err("DMS is not supposed to be set on first frame\n");
+			rc = -EINVAL;
 			goto error;
 		}
 		/* update dsi ctrl for new mode */
@@ -7829,44 +7816,12 @@ int dsi_display_enable(struct dsi_display *display)
 		pr_debug("cont splash enabled, display enable not required\n");
 
 		/*
-		 * Start re-setting during continuous splash to perform mode
-		 * set before the first frame, if requested by the DT
-		 * configuration property
+		 * For the continuous splash usecase, the DMS resolution switch
+		 * must not be attempted here: the DSI host engine is not up yet
+		 * and a switch would fail (rc=-22) and kill the panel (EESD),
+		 * causing a flicker. Defer the DMS switch to the runtime
+		 * dsi_display_set_mode() path instead.
 		 */
-		mode = display->panel->cur_mode;
-		if (!(mode->dsi_mode_flags & DSI_MODE_FLAG_DMS))
-			return 0;
-
-		/*
-		 * At this point the panel is ON from bootloader (displaying
-		 * the splash screen) and the Command Mode Engine is also up:
-		 * send the commands to switch the resolution NOW!
-		 */
-		pr_info("[%s] Dynamic Mode Setting: switching now!\n",
-			display->name);
-		rc = dsi_panel_post_switch(display->panel);
-		if (rc)
-			pr_warn("[%s] Cannot send post-switch cmd: %d\n",
-				display->name, rc);
-
-		/* If Display Stream Compression is required, update params. */
-		if (mode->priv_info->dsc_enabled) {
-			mode->priv_info->dsc.pic_width *= display->ctrl_count;
-			rc = dsi_panel_update_pps(display->panel);
-			if (rc)
-				pr_warn("[%s] Cannot update PPS: %d\n",
-					display->name, rc);
-		}
-
-		rc = dsi_panel_switch(display->panel);
-		if (rc) {
-			pr_err("[%s] CRITICAL: Cannot switch resolution: "
-			       "rc = %d - Returning failure and "
-			       "hoping for DSI recovery...\n",
-				display->name, rc);
-			return rc;
-		}
-
 		return 0;
 	}
 
