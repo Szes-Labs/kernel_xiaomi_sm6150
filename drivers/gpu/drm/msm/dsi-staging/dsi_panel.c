@@ -2053,7 +2053,6 @@ static int dsi_panel_create_cmd_packets(const char *data,
 					struct dsi_cmd_desc *cmd)
 {
 	int rc = 0;
-	u32 count = 0;
 	int i, j;
 	u8 *payload;
 
@@ -2231,7 +2230,6 @@ static int dsi_panel_parse_reset_sequence(struct dsi_panel *panel)
 	u32 count = 0;
 	int i;
 	u32 length = 0;
-	u32 count = 0;
 	u32 size = 0;
 	u32 *arr_32 = NULL;
 	const u32 *arr;
