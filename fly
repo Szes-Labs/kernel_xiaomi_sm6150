@@ -17,13 +17,13 @@ DTB="$OUT/arch/arm64/boot/dtb.img"
 BUILD_LOG="$KERNEL_DIR/build.log"
 ZIPNAME="${KNAME}-${VAR}-${ROT}.zip"
 
-TG_TOKEN="9286651217:AAH3343Qf9XwoPQa5YY_RvsCj62Zt2NcYkc"
-TG_CHAT_ID="7540957411"
+: "${TG_TOKEN:?TG_TOKEN belum di-set}"
+: "${TG_CHAT_ID:?TG_CHAT_ID belum di-set}"
 
 export ARCH=arm64
 export KBUILD_BUILD_USER="Szè"
 export KBUILD_BUILD_HOST="Haotian-#09"
-
+export KBUILD_COMPILER_STRING="Neutron Clang 12.0"
 
 SECONDS=0
 DOCKER_OS="$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME")"
@@ -181,8 +181,8 @@ make -j"$(nproc --all)" \
     LLVM_IAS=1 \
     CC=clang \
     CLANG_TRIPLE="${CLANG_PATH}/aarch64-linux-gnu-" \
-    CROSS_COMPILE=aarch64-linux-gnu- \
-    CROSS_COMPILE_ARM32=aarch64-linux-gnu- \
+    CROSS_COMPILE="${GCC64_PATH}/bin/aarch64-elf-" \
+    CROSS_COMPILE_ARM32="${GCC32_PATH}/bin/arm-eabi-" \
     2>&1 | tee -a "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}

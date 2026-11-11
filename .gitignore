@@ -19,6 +19,8 @@
 *.dwo
 *.elf
 *.gcno
+*.KernelSU/
+*.drivers/kernelsu
 *.gz
 *.i
 *.ko
