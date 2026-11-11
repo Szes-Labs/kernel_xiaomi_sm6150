@@ -48,9 +48,9 @@ static void update_online_cpu_policy(void)
 	get_online_cpus();
 	for_each_possible_cpu(cpu) {
 		if (cpu_online(cpu)) {
-			if (cpumask_intersects(cpumask_of(cpu), cpu_lp_mask))
+			if (cpumask_intersects(cpumask_of(cpu), &cpu_lp_mask))
 				cpufreq_update_policy(cpu);
-			if (cpumask_intersects(cpumask_of(cpu), cpu_perf_mask))
+			if (cpumask_intersects(cpumask_of(cpu), &cpu_perf_mask))
 				cpufreq_update_policy(cpu);
 		}
 	}
@@ -97,7 +97,7 @@ static void thermal_throttle_worker(struct work_struct *work)
 
 static u32 get_throttle_freq(struct thermal_zone *zone, u32 cpu)
 {
-	if (cpumask_test_cpu(cpu, cpu_lp_mask))
+	if (cpumask_test_cpu(cpu, &cpu_lp_mask))
 		return zone->silver_khz;
 
 	return zone->gold_khz;
