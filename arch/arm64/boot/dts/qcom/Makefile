@@ -2,29 +2,8 @@ ifeq ($(CONFIG_MACH_XIAOMI),y)
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 dtbo-$(CONFIG_MACH_XIAOMI_COURBET) += courbet-sdmmagpie-overlay.dtbo
 courbet-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-
-dtbo-$(CONFIG_MACH_XIAOMI_DAVINCI) += \
-	davinci-sdmmagpie-overlay.dtbo \
-	davinci_m0a-sdmmagpie-overlay.dtbo \
-	davinci_m0b-sdmmagpie-overlay.dtbo
-
-davinci-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-davinci_m0a-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-davinci_m0b-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-
-dtbo-$(CONFIG_MACH_XIAOMI_PHOENIX) += phoenix-sdmmagpie-overlay.dtbo
-phoenix-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-
-dtbo-$(CONFIG_MACH_XIAOMI_SWEET) += sweet-sdmmagpie-overlay.dtbo
-sweet-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-
-dtbo-$(CONFIG_MACH_XIAOMI_TOCO) += toco-sdmmagpie-overlay.dtbo
-toco-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
-
-dtbo-$(CONFIG_MACH_XIAOMI_TUCANA) += tucana-sdmmagpie-overlay.dtbo
-tucana-sdmmagpie-overlay.dtbo-base := xiaomi-sdmmagpie.dtb
 endif
-else
+endif
 # SPDX-License-Identifier: GPL-2.0
 ifeq ($(TARGET_BOARD_TYPE),auto)
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
@@ -39,29 +18,6 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 		sa8155-v2-adp-air-lxc-overlay.dtbo \
 		sa8155p-v2-adp-air-lxc-overlay.dtbo
 
-sm8150-cdp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sa8155-adp-star-overlay.dtbo-base := sa8155.dtb sa8155-v2.dtb
-sa8155p-adp-star-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-sa8155p-adp-star-lpass-overlay.dtbo := sa8155p.dtb sa8155p-v2.dtb
-sa8155-v2-adp-air-overlay.dtbo-base := sa8155.dtb sa8155-v2.dtb
-sa8155p-v2-adp-air-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-sa8155p-v2-adp-air-lpass-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-sa8155-v2-adp-air-lxc-overlay.dtbo-base := sa8155.dtb sa8155-v2.dtb
-sa8155p-v2-adp-air-lxc-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-else
-dtb-$(CONFIG_ARCH_SM8150)	+= sm8150-cdp.dtb \
-	sa8155-adp-star.dtb \
-	sa8155p-adp-star.dtb \
-	sa8155p-adp-star-lpass.dtb \
-	sa8155-v2-adp-star.dtb \
-	sa8155p-v2-adp-star.dtb \
-	sa8155-v2-adp-air.dtb \
-	sa8155p-v2-adp-air.dtb \
-	sa8155p-v2-adp-air-lpass.dtb \
-	sa8155p-v2-adp-air-capture.dtb \
-	sa8155p-v2-adp-star-capture.dtb
-
-endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 	dtbo-$(CONFIG_ARCH_SDMSHRIKE) += \
@@ -115,13 +71,6 @@ endif
 
 else # TARGET_BOARD_TYPE != auto
 
-dtb-$(CONFIG_ARCH_QCOM)	+= apq8016-sbc.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-db820c.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= ipq8074-hk01.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-mtp.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= msm8992-bullhead-rev-101.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= msm8994-angler-rev-101.dtb
-dtb-$(CONFIG_ARCH_QCOM)	+= msm8996-mtp.dtb
 dtb-$(CONFIG_ARCH_QCS403) += qcs403-iot-sku1.dtb \
 		qcs403-iot-sku3.dtb \
 		qcs403-iot-sku5.dtb \
@@ -155,85 +104,6 @@ dtb-$(CONFIG_ARCH_QCS405) += qcs405-iot-sku1.dtb \
 		qcs404-iot-robot-reference-board.dtb \
 		qcs405-iot-robot-reference-dvt-board.dtb \
 		qcs404-iot-robot-reference-dvt-board.dtb
-
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
-	dtbo-$(CONFIG_ARCH_SM8150) += \
-		sm8150-cdp-overlay.dtbo \
-		sm8150-mtp-overlay.dtbo \
-		sm8150-rumi-overlay.dtbo \
-		sm8150-qrd-overlay.dtbo \
-		sm8150-qrd-dvt-overlay.dtbo \
-		sa8155-adp-star-overlay.dtbo \
-		sa8155p-adp-star-overlay.dtbo \
-		sa8155-v2-adp-air-overlay.dtbo \
-                sa8155p-v2-adp-air-overlay.dtbo \
-		sa8155-adp-alcor-overlay.dtbo \
-		sa8155p-adp-alcor-overlay.dtbo \
-		sm8150-sdx50m-cdp-overlay.dtbo \
-		sm8150-sdx50m-mtp-overlay.dtbo \
-		sm8150-sdx50m-mtp-2.5k-panel-overlay.dtbo \
-		sm8150-sdx50m-qrd-overlay.dtbo \
-		sm8150-sdxprairie-cdp-overlay.dtbo \
-		sm8150-sdxprairie-mtp-overlay.dtbo \
-		sm8150-sdxprairie-v2-cdp-overlay.dtbo \
-		sm8150-sdxprairie-v2-mtp-overlay.dtbo \
-		sm8150-sdxprairie-v3-mtp-overlay.dtbo \
-		sm8150-marmot-cdp-overlay.dtbo \
-		sm8150-marmot-mtp-overlay.dtbo \
-		sm8150-hdk-overlay.dtbo
-
-sm8150-cdp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-mtp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-rumi-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-qrd-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-hdk-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-qrd-dvt-overlay.dtbo-base := sm8150-v2.dtb sm8150p-v2.dtb
-sa8155-adp-star-overlay.dtbo-base := sa8155.dtb sa8155-v2.dtb
-sa8155p-adp-star-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-sa8155-v2-adp-air-overlay.dtbo-base := sa8155.dtb sa8155-v2.dtb
-sa8155p-v2-adp-air-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-sa8155-adp-alcor-overlay.dtbo-base := sa8155.dtb sa8155-v2.dtb
-sa8155p-adp-alcor-overlay.dtbo-base := sa8155p.dtb sa8155p-v2.dtb
-sm8150-sdx50m-cdp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdx50m-mtp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdx50m-mtp-2.5k-panel-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdx50m-qrd-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdxprairie-cdp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdxprairie-mtp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdxprairie-v2-cdp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdxprairie-v2-mtp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-sdxprairie-v3-mtp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-marmot-cdp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-sm8150-marmot-mtp-overlay.dtbo-base := sm8150.dtb sm8150-v2.dtb sm8150p.dtb sm8150p-v2.dtb
-else
-dtb-$(CONFIG_ARCH_SM8150)	+= sm8150-rumi.dtb \
-	sm8150-mtp.dtb \
-	sm8150-cdp.dtb \
-	sm8150-qrd.dtb \
-	sa8155-adp-star.dtb \
-	sa8155p-adp-star.dtb \
-	sa8155-v2-adp-star.dtb \
-	sa8155p-v2-adp-star.dtb \
-	sa8155-v2-adp-air.dtb \
-	sa8155p-v2-adp-air.dtb \
-	sa8155p-v2-adp-air-capture.dtb \
-	sa8155p-v2-adp-star-capture.dtb \
-	sa8155-adp-alcor.dtb \
-	sa8155p-adp-alcor.dtb \
-	sm8150-v2-rumi.dtb \
-	sm8150-v2-mtp.dtb \
-	sm8150-v2-cdp.dtb \
-	sm8150-v2-qrd.dtb \
-	sm8150-v2-qrd-dvt.dtb \
-	sm8150p-mtp.dtb \
-	sm8150p-cdp.dtb \
-	sm8150p-qrd.dtb \
-	sm8150p-v2-mtp.dtb \
-	sm8150p-v2-cdp.dtb \
-	sm8150p-v2-qrd.dtb \
-	sm8150-hdk.dtb \
-	sm8150p-hdk.dtb
-endif
 
 dtb-$(CONFIG_QTI_GVM) += sa8155-vm-la.dtb \
 	sa8155-vm-lv.dtb \
@@ -374,107 +244,6 @@ dtb-$(CONFIG_ARCH_SDMMAGPIE)	+= sdmmagpie-rumi.dtb \
 	sdmmagpie-external-codec-idp.dtb \
 	sdmmagpie-usbc-idp.dtb \
 	sdmmagpie-dual-display-idp.dtb
-endif
-
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
-	dtbo-$(CONFIG_ARCH_TRINKET) += \
-		trinket-rumi-overlay.dtbo \
-		trinket-idp-overlay.dtbo \
-		trinket-qrd-overlay.dtbo \
-		trinket-external-codec-idp-overlay.dtbo \
-		trinket-usbc-external-codec-idp-overlay.dtbo \
-		trinket-usbc-idp-overlay.dtbo \
-		trinket-dp-idp-overlay.dtbo \
-		trinket-facepay-overlay.dtbo \
-		trinket-iot-idp-overlay.dtbo \
-		trinketp-iot-idp-overlay.dtbo \
-		trinket-iot-external-codec-idp-overlay.dtbo \
-		trinketp-iot-external-codec-idp-overlay.dtbo \
-		trinket-iot-usbc-external-codec-idp-overlay.dtbo \
-		trinketp-iot-usbc-external-codec-idp-overlay.dtbo \
-		trinket-iot-usbc-idp-overlay.dtbo \
-		trinketp-iot-usbc-idp-overlay.dtbo \
-		trinket-iot-dp-idp-overlay.dtbo \
-		trinketp-iot-dp-idp-overlay.dtbo
-
-trinket-rumi-overlay.dtbo-base := trinket.dtb
-trinket-idp-overlay.dtbo-base := trinket.dtb
-trinket-qrd-overlay.dtbo-base := trinket.dtb
-trinket-external-codec-idp-overlay.dtbo-base := trinket.dtb
-trinket-usbc-external-codec-idp-overlay.dtbo-base := trinket.dtb
-trinket-usbc-idp-overlay.dtbo-base := trinket.dtb
-trinket-dp-idp-overlay.dtbo-base := trinket.dtb
-trinket-facepay-overlay.dtbo-base := trinket-iot.dtb
-trinket-iot-idp-overlay.dtbo-base := trinket-iot.dtb
-trinketp-iot-idp-overlay.dtbo-base := trinketp-iot.dtb
-trinket-iot-external-codec-idp-overlay.dtbo-base := trinket-iot.dtb
-trinketp-iot-external-codec-idp-overlay.dtbo-base := trinketp-iot.dtb
-trinket-iot-usbc-external-codec-idp-overlay.dtbo-base := trinket-iot.dtb
-trinketp-iot-usbc-external-codec-idp-overlay.dtbo-base := trinketp-iot.dtb
-trinket-iot-usbc-idp-overlay.dtbo-base := trinket-iot.dtb
-trinketp-iot-usbc-idp-overlay.dtbo-base := trinketp-iot.dtb
-trinket-iot-dp-idp-overlay.dtbo-base := trinket-iot.dtb
-trinketp-iot-dp-idp-overlay.dtbo-base := trinketp-iot.dtb
-else
-dtb-$(CONFIG_ARCH_TRINKET)	+= trinket-rumi.dtb \
-	trinket-idp.dtb \
-	trinket-qrd.dtb \
-	trinket-external-codec-idp.dtb \
-	trinket-usbc-external-codec-idp.dtb \
-	trinket-usbc-idp.dtb \
-	trinket-dp-idp.dtb \
-	trinket-iot-idp.dtb \
-	trinketp-iot-idp.dtb \
-	trinket-iot-external-codec-idp.dtb \
-	trinketp-iot-external-codec-idp.dtb \
-	trinket-iot-usbc-external-codec-idp.dtb \
-	trinketp-iot-usbc-external-codec-idp.dtb \
-	trinket-iot-usbc-idp.dtb \
-	trinketp-iot-usbc-idp.dtb \
-	trinket-iot-dp-idp.dtb \
-	trinketp-iot-dp-idp.dtb
-endif
-
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
-	dtbo-$(CONFIG_ARCH_ATOLL) += \
-		atoll-idp-overlay.dtbo\
-		atoll-atp-overlay.dtbo\
-		atoll-qrd-overlay.dtbo\
-		atoll-wcd937x-idp-overlay.dtbo\
-		atoll-usbc-idp-overlay.dtbo\
-		atoll-rumi-overlay.dtbo\
-		atollp-idp-overlay.dtbo\
-		atollp-atp-overlay.dtbo\
-		atollp-qrd-overlay.dtbo\
-		atoll-ab-idp-overlay.dtbo\
-		atoll-ab-atp-overlay.dtbo\
-		atoll-ab-qrd-overlay.dtbo
-
-atoll-idp-overlay.dtbo-base := atoll.dtb
-atoll-atp-overlay.dtbo-base := atoll.dtb
-atoll-qrd-overlay.dtbo-base := atoll.dtb
-atoll-rumi-overlay.dtbo-base := atoll.dtb
-atoll-wcd937x-idp-overlay.dtbo-base := atoll.dtb
-atoll-usbc-idp-overlay.dtbo-base := atoll.dtb
-atollp-idp-overlay.dtbo-base := atollp.dtb
-atollp-atp-overlay.dtbo-base := atollp.dtb
-atollp-qrd-overlay.dtbo-base := atollp.dtb
-atoll-ab-idp-overlay.dtbo-base := atoll-ab.dtb
-atoll-ab-atp-overlay.dtbo-base := atoll-ab.dtb
-atoll-ab-qrd-overlay.dtbo-base := atoll-ab.dtb
-else
-dtb-$(CONFIG_ARCH_ATOLL)	+= atoll-idp.dtb\
-	atoll-atp.dtb\
-	atoll-qrd.dtb\
-	atoll-wcd937x-idp.dtb\
-	atoll-usbc-idp.dtb\
-	atoll-rumi.dtb\
-	atollp-idp.dtb\
-	atollp-atp.dtb\
-	atollp-qrd.dtb\
-	atoll-ab-idp.dtb\
-	atoll-ab-atp.dtb\
-	atoll-ab-qrd.dtb
 endif
 
 dtb-$(CONFIG_ARCH_SDXPRAIRIE) += sdxprairie-rumi.dtb \
