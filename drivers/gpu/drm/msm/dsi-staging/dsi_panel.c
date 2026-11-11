@@ -2192,6 +2192,7 @@ static int dsi_panel_parse_reset_sequence(struct dsi_panel *panel)
 {
 	int rc = 0;
 	int i;
+	u32 count = 0;
 	u32 length = 0;
 	u32 size = 0;
 	u32 *arr_32 = NULL;
