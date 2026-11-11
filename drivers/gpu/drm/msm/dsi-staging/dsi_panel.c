@@ -234,6 +234,7 @@ int dsi_dsc_create_pps_buf_cmd(struct msm_display_dsc_info *dsc, char *buf,
 static int dsi_panel_vreg_get(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	int i;
 	struct regulator *vreg = NULL;
 
@@ -261,6 +262,7 @@ error_put:
 static int dsi_panel_vreg_put(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	int i;
 
 	for (i = panel->power_info.count - 1; i >= 0; i--)
@@ -272,6 +274,7 @@ static int dsi_panel_vreg_put(struct dsi_panel *panel)
 static int dsi_panel_gpio_request(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_panel_reset_config *r_config = &panel->reset_config;
 
 	if (gpio_is_valid(r_config->reset_gpio)) {
@@ -323,6 +326,7 @@ error:
 static int dsi_panel_gpio_release(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_panel_reset_config *r_config = &panel->reset_config;
 
 	if (gpio_is_valid(r_config->reset_gpio))
@@ -367,6 +371,7 @@ int dsi_panel_trigger_esd_attack(struct dsi_panel *panel)
 static int dsi_panel_reset(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_panel_reset_config *r_config = &panel->reset_config;
 	int i;
 
@@ -428,6 +433,7 @@ exit:
 static int dsi_panel_set_pinctrl_state(struct dsi_panel *panel, bool enable)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct pinctrl_state *state;
 
 	if (panel->host_config.ext_bridge_num)
@@ -450,6 +456,7 @@ static int dsi_panel_set_pinctrl_state(struct dsi_panel *panel, bool enable)
 static int dsi_panel_power_on(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	bool skip_enable_regulator = false;
 
 #ifdef CONFIG_TOUCHSCREEN_TDDI_DBCLK
@@ -503,6 +510,7 @@ extern bool enable_gesture_mode;
 static int dsi_panel_power_off(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	bool skip_reset_gpio, skip_disable_regulator = false;
 
 	if (gpio_is_valid(panel->reset_config.disp_en_gpio))
@@ -587,6 +595,7 @@ error:
 static int dsi_panel_pinctrl_deinit(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (panel->host_config.ext_bridge_num)
 		return 0;
@@ -599,6 +608,7 @@ static int dsi_panel_pinctrl_deinit(struct dsi_panel *panel)
 static int dsi_panel_pinctrl_init(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (panel->host_config.ext_bridge_num)
 		return 0;
@@ -651,6 +661,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct mipi_dsi_device *dsi;
 
 	if (!panel || (bl_lvl > 0xffff)) {
@@ -693,6 +704,7 @@ static int dsi_panel_update_pwm_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 duty = 0;
 	u32 period_ns = 0;
 	struct dsi_backlight_config *bl;
@@ -789,6 +801,7 @@ u32 dsi_panel_get_fod_dim_alpha(struct dsi_panel *panel)
 
 int dsi_panel_update_doze(struct dsi_panel *panel) {
 	int rc = 0;
+	u32 count = 0;
 
 	if (panel->doze_enabled && panel->doze_mode == DSI_DOZE_HBM) {
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DOZE_HBM);
@@ -834,6 +847,7 @@ int dsi_panel_set_doze_mode(struct dsi_panel *panel, enum dsi_doze_mode_type mod
 int dsi_panel_set_fod_hbm(struct dsi_panel *panel, bool status)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (panel->hbm_mode)
 		return rc;
@@ -867,6 +881,7 @@ int dsi_panel_set_fod_hbm(struct dsi_panel *panel, bool status)
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
+	u32 count = 0;
 	int bl_dc_min = panel->bl_config.bl_min_level * 2;
 	struct dsi_backlight_config *bl = &panel->bl_config;
 
@@ -941,6 +956,7 @@ void dsi_panel_bl_handoff(struct dsi_panel *panel)
 static int dsi_panel_pwm_register(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_backlight_config *bl = &panel->bl_config;
 
 	bl->pwm_bl = devm_of_pwm_get(panel->parent, panel->panel_of_node, NULL);
@@ -957,6 +973,7 @@ static int dsi_panel_pwm_register(struct dsi_panel *panel)
 static int dsi_panel_bl_register(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_backlight_config *bl = &panel->bl_config;
 
 	if (panel->host_config.ext_bridge_num)
@@ -993,6 +1010,7 @@ static void dsi_panel_pwm_unregister(struct dsi_panel *panel)
 static int dsi_panel_bl_unregister(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_backlight_config *bl = &panel->bl_config;
 
 	if (panel->host_config.ext_bridge_num)
@@ -1022,6 +1040,7 @@ static int dsi_panel_parse_timing(struct dsi_mode_info *mode,
 				  struct dsi_parser_utils *utils)
 {
 	int rc = 0;
+	u32 count = 0;
 	u64 tmp64 = 0;
 	u32 val = 0;
 	struct dsi_display_mode *display_mode;
@@ -1151,6 +1170,7 @@ static int dsi_panel_parse_pixel_format(struct dsi_host_common_cfg *host,
 					const char *name)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 bpp = 0;
 	enum dsi_pixel_format fmt;
 	const char *packing;
@@ -1201,6 +1221,7 @@ static int dsi_panel_parse_lane_states(struct dsi_host_common_cfg *host,
 				       const char *name)
 {
 	int rc = 0;
+	u32 count = 0;
 	bool lane_enabled;
 
 	lane_enabled = utils->read_bool(utils->data,
@@ -1232,6 +1253,7 @@ static int dsi_panel_parse_color_swap(struct dsi_host_common_cfg *host,
 				      const char *name)
 {
 	int rc = 0;
+	u32 count = 0;
 	const char *swap_mode;
 
 	swap_mode = utils->get_property(utils->data,
@@ -1270,6 +1292,7 @@ static int dsi_panel_parse_triggers(struct dsi_host_common_cfg *host,
 {
 	const char *trig;
 	int rc = 0;
+	u32 count = 0;
 
 	trig = utils->get_property(utils->data,
 			"qcom,mdss-dsi-mdp-trigger", NULL);
@@ -1335,6 +1358,7 @@ static int dsi_panel_parse_ext_bridge_config(struct dsi_host_common_cfg *host,
 {
 	u32 len = 0, i = 0;
 	int rc = 0;
+	u32 count = 0;
 
 	host->ext_bridge_num = 0;
 
@@ -1380,6 +1404,7 @@ static int dsi_panel_parse_misc_host_config(struct dsi_host_common_cfg *host,
 {
 	u32 val = 0;
 	int rc = 0;
+	u32 count = 0;
 	bool panel_cphy_mode = false;
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-dsi-t-clk-post", &val);
@@ -1419,6 +1444,7 @@ static void dsi_panel_parse_split_link_config(struct dsi_host_common_cfg *host,
 					const char *name)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 val = 0;
 	bool supported = false;
 	struct dsi_split_link_config *split_link = &host->split_link;
@@ -1455,6 +1481,7 @@ static void dsi_panel_parse_split_link_config(struct dsi_host_common_cfg *host,
 static int dsi_panel_parse_host_config(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_parser_utils *utils = &panel->utils;
 
 	rc = dsi_panel_parse_pixel_format(&panel->host_config, utils,
@@ -1515,6 +1542,7 @@ static int dsi_panel_parse_qsync_caps(struct dsi_panel *panel,
 				     struct device_node *of_node)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 val = 0;
 
 	rc = of_property_read_u32(of_node,
@@ -1532,6 +1560,7 @@ static int dsi_panel_parse_qsync_caps(struct dsi_panel *panel,
 static int dsi_panel_parse_dyn_clk_caps(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	bool supported = false, skip_phy_timing_update = false;
 	struct dsi_dyn_clk_caps *dyn_clk_caps = &panel->dyn_clk_caps;
 	struct dsi_parser_utils *utils = &panel->utils;
@@ -1601,6 +1630,7 @@ static int dsi_panel_parse_dyn_clk_caps(struct dsi_panel *panel)
 static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	bool supported = false;
 	struct dsi_dfps_capabilities *dfps_caps = &panel->dfps_caps;
 	struct dsi_parser_utils *utils = &panel->utils;
@@ -1683,6 +1713,7 @@ static int dsi_panel_parse_video_host_config(struct dsi_video_engine_cfg *cfg,
 					     const char *name)
 {
 	int rc = 0;
+	u32 count = 0;
 	const char *traffic_mode;
 	u32 vc_id = 0;
 	u32 val = 0;
@@ -1770,6 +1801,7 @@ static int dsi_panel_parse_cmd_host_config(struct dsi_cmd_engine_cfg *cfg,
 {
 	u32 val = 0;
 	int rc = 0;
+	u32 count = 0;
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-dsi-wr-mem-start", &val);
 	if (rc) {
@@ -1816,6 +1848,7 @@ error:
 static int dsi_panel_parse_panel_mode(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_parser_utils *utils = &panel->utils;
 	bool panel_mode_switch_enabled;
 	enum dsi_op_mode panel_mode;
@@ -1872,6 +1905,7 @@ error:
 static int dsi_panel_parse_phy_props(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 val = 0;
 	const char *str;
 	struct dsi_panel_phy_props *props = &panel->phy_props;
@@ -2019,6 +2053,7 @@ static int dsi_panel_create_cmd_packets(const char *data,
 					struct dsi_cmd_desc *cmd)
 {
 	int rc = 0;
+	u32 count = 0;
 	int i, j;
 	u8 *payload;
 
@@ -2093,6 +2128,7 @@ static int dsi_panel_parse_cmd_sets_sub(struct dsi_panel_cmd_set *cmd,
 					struct dsi_parser_utils *utils)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 length = 0;
 	const char *data;
 	const char *state;
@@ -2158,6 +2194,7 @@ static int dsi_panel_parse_cmd_sets(
 		struct dsi_parser_utils *utils)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_panel_cmd_set *set;
 	u32 i;
 
@@ -2191,6 +2228,7 @@ static int dsi_panel_parse_cmd_sets(
 static int dsi_panel_parse_reset_sequence(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	int i;
 	u32 length = 0;
 	u32 count = 0;
@@ -2339,6 +2377,7 @@ static int dsi_panel_parse_jitter_config(
 static int dsi_panel_parse_power_cfg(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	char *supply_name;
 
 	if (panel->host_config.ext_bridge_num)
@@ -2363,6 +2402,7 @@ error:
 static int dsi_panel_parse_gpios(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	const char *data;
 	struct dsi_parser_utils *utils = &panel->utils;
 	char *reset_gpio_name, *mode_set_gpio_name;
@@ -2441,6 +2481,7 @@ error:
 static int dsi_panel_parse_bl_pwm_config(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 val;
 	struct dsi_backlight_config *config = &panel->bl_config;
 	struct dsi_parser_utils *utils = &panel->utils;
@@ -2522,6 +2563,7 @@ count_fail:
 static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	u32 val = 0;
 	const char *bl_type;
 	const char *data;
@@ -2867,6 +2909,7 @@ static int dsi_panel_parse_phy_timing(struct dsi_display_mode *mode,
 	const char *data;
 	u32 len, i;
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_display_mode_priv_info *priv_info;
 	u64 h_period, v_period;
 	u64 refresh_rate = TICKS_IN_MICRO_SECOND;
@@ -3045,6 +3088,7 @@ error:
 static int dsi_panel_parse_hdr_config(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct drm_panel_hdr_properties *hdr_prop;
 	struct dsi_parser_utils *utils = &panel->utils;
 
@@ -3224,6 +3268,7 @@ static int dsi_panel_parse_partial_update_caps(struct dsi_display_mode *mode,
 	struct msm_roi_caps *roi_caps = NULL;
 	const char *data;
 	int rc = 0;
+	u32 count = 0;
 
 	if (!mode || !mode->priv_info) {
 		pr_err("invalid arguments\n");
@@ -3386,6 +3431,7 @@ int dsi_panel_parse_esd_reg_read_configs(struct dsi_panel *panel)
 {
 	struct drm_panel_esd_config *esd_config;
 	int rc = 0;
+	u32 count = 0;
 	u32 tmp;
 	u32 i, status_len, *lenp;
 	struct property *data;
@@ -3505,6 +3551,7 @@ error:
 static int dsi_panel_parse_esd_config(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	const char *string;
 	struct drm_panel_esd_config *esd_config;
 	struct dsi_parser_utils *utils = &panel->utils;
@@ -3621,6 +3668,7 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	struct dsi_parser_utils *utils;
 	const char *panel_physical_type;
 	int rc = 0;
+	u32 count = 0;
 
 	panel = kzalloc(sizeof(*panel), GFP_KERNEL);
 	if (!panel)
@@ -3793,6 +3841,7 @@ int dsi_panel_drv_init(struct dsi_panel *panel,
 		       struct mipi_dsi_host *host)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct mipi_dsi_device *dev;
 
 	if (!panel || !host) {
@@ -3847,6 +3896,7 @@ int dsi_panel_drv_init(struct dsi_panel *panel,
 	if (rc)
 		pr_err("sysfs group creation failed, rc=%d\n", rc);
 	set_panel = panel;
+	ea_panel_init(panel);
 #endif
 
 	goto exit;
@@ -3865,6 +3915,7 @@ exit:
 int dsi_panel_drv_deinit(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -3905,6 +3956,7 @@ void dsi_panel_gamma_mode_change(struct dsi_panel *panel,
 {
 	u32 count = 0;
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_display_mode *cur_mode = panel->cur_mode;
 
 	mutex_lock(&panel->panel_lock);
@@ -4025,6 +4077,7 @@ int dsi_panel_get_phy_props(struct dsi_panel *panel,
 			    struct dsi_panel_phy_props *phy_props)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel || !phy_props) {
 		pr_err("invalid params\n");
@@ -4039,6 +4092,7 @@ int dsi_panel_get_dfps_caps(struct dsi_panel *panel,
 			    struct dsi_dfps_capabilities *dfps_caps)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel || !dfps_caps) {
 		pr_err("invalid params\n");
@@ -4195,6 +4249,7 @@ int dsi_panel_get_host_cfg_for_mode(struct dsi_panel *panel,
 				    struct dsi_host_config *config)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_dyn_clk_caps *dyn_clk_caps = &panel->dyn_clk_caps;
 
 	if (!panel || !mode || !config) {
@@ -4237,6 +4292,7 @@ int dsi_panel_get_host_cfg_for_mode(struct dsi_panel *panel,
 int dsi_panel_pre_prepare(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4265,6 +4321,7 @@ error:
 int dsi_panel_update_pps(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_panel_cmd_set *set = NULL;
 	struct dsi_display_mode_priv_info *priv_info = NULL;
 
@@ -4302,11 +4359,15 @@ error:
 int dsi_panel_set_lp1(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
 		return -EINVAL;
 	}
+
+	/* entering AOD: drop a pending normal backlight clamp */
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
@@ -4340,11 +4401,15 @@ exit:
 int dsi_panel_set_lp2(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
 		return -EINVAL;
 	}
+
+	/* entering AOD: drop a pending normal backlight clamp */
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
@@ -4366,11 +4431,18 @@ exit:
 int dsi_panel_set_nolp(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
 		return -EINVAL;
 	}
+
+	/*
+	 * Leaving AOD restarts the display pipeline, so the PCC has to be
+	 * latched again before the normal backlight level is pinned.
+	 */
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 	if (!panel->panel_initialized)
@@ -4400,6 +4472,7 @@ exit:
 int dsi_panel_prepare(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4441,6 +4514,7 @@ static int dsi_panel_roi_prepare_dcs_cmds(struct dsi_panel_cmd_set *set,
 	static const int ROI_CMD_LEN = 5;
 
 	int rc = 0;
+	u32 count = 0;
 
 	/* DTYPE_DCS_LWRITE */
 	static char *caset, *paset;
@@ -4516,6 +4590,7 @@ int dsi_panel_send_qsync_on_dcs(struct dsi_panel *panel,
 		int ctrl_idx)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4538,6 +4613,7 @@ int dsi_panel_send_qsync_off_dcs(struct dsi_panel *panel,
 		int ctrl_idx)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4560,6 +4636,7 @@ int dsi_panel_send_roi_dcs(struct dsi_panel *panel, int ctrl_idx,
 		struct dsi_rect *roi)
 {
 	int rc = 0;
+	u32 count = 0;
 	struct dsi_panel_cmd_set *set;
 	struct dsi_display_mode_priv_info *priv_info;
 
@@ -4598,6 +4675,7 @@ int dsi_panel_send_roi_dcs(struct dsi_panel *panel, int ctrl_idx,
 int dsi_panel_pre_mode_switch_to_video(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
@@ -4617,6 +4695,7 @@ int dsi_panel_pre_mode_switch_to_video(struct dsi_panel *panel)
 int dsi_panel_pre_mode_switch_to_cmd(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
@@ -4635,6 +4714,7 @@ int dsi_panel_pre_mode_switch_to_cmd(struct dsi_panel *panel)
 int dsi_panel_mode_switch_to_cmd(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
@@ -4653,6 +4733,7 @@ int dsi_panel_mode_switch_to_cmd(struct dsi_panel *panel)
 int dsi_panel_mode_switch_to_vid(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
@@ -4671,6 +4752,7 @@ int dsi_panel_mode_switch_to_vid(struct dsi_panel *panel)
 int dsi_panel_switch(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
@@ -4691,6 +4773,7 @@ int dsi_panel_switch(struct dsi_panel *panel)
 int dsi_panel_post_switch(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
@@ -4711,20 +4794,38 @@ int dsi_panel_post_switch(struct dsi_panel *panel)
 int dsi_panel_enable(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("Invalid params\n");
 		return -EINVAL;
 	}
+	count = panel->cur_mode->priv_info->
+			cmd_sets[DSI_CMD_SET_DISP_BC_120HZ].count;
+
+	/* A pending AOD backlight restore must not race with a fresh enable */
+	cancel_delayed_work_sync(&panel->nolp_bl_delay_work);
+	panel->in_aod = false;
+
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 
 	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ON);
-	if (rc)
+	if (rc) {
 		pr_err("[%s] failed to send DSI_CMD_SET_ON cmds, rc=%d\n",
 		       panel->name, rc);
-	else
+	} else {
 		panel->panel_initialized = true;
+
+		if (count && (panel->cur_mode->timing.refresh_rate == 120)) {
+			rc = dsi_panel_tx_cmd_set(panel,
+					DSI_CMD_SET_DISP_BC_120HZ);
+			if (rc)
+				pr_err("[%s] failed to send DSI_CMD_SET_DISP_BC_120HZ cmd, rc=%d\n",
+				       panel->name, rc);
+		}
+	}
 	mutex_unlock(&panel->panel_lock);
 
 	if (panel->hbm_mode)
@@ -4736,6 +4837,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
 int dsi_panel_post_enable(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4758,6 +4860,7 @@ error:
 int dsi_panel_pre_disable(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4781,11 +4884,17 @@ error:
 int dsi_panel_disable(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
 		return -EINVAL;
 	}
+
+	cancel_delayed_work_sync(&panel->nolp_bl_delay_work);
+	panel->in_aod = false;
+
+	ea_panel_reset();
 
 	mutex_lock(&panel->panel_lock);
 
@@ -4828,6 +4937,7 @@ int dsi_panel_disable(struct dsi_panel *panel)
 int dsi_panel_unprepare(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
@@ -4859,6 +4969,7 @@ error:
 int dsi_panel_post_unprepare(struct dsi_panel *panel)
 {
 	int rc = 0;
+	u32 count = 0;
 
 	if (!panel) {
 		pr_err("invalid params\n");
