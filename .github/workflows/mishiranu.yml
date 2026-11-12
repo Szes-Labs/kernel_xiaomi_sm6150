@@ -1,0 +1,75 @@
+name: Mishiranu Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  Mishiranu:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - KSU
+          - KSU-OEM
+          - Non-KSU
+
+    steps:
+    - name: 🔄 Checkout Code
+      uses: actions/checkout@v5
+
+    - name: ⏰ Prepare timezone
+      run: |
+        sudo rm /etc/localtime
+        sudo ln -s /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+
+    - name: 📦 Install Dependencies
+      run: |
+        sudo apt update -y
+        sudo apt install bc cpio flex bison aptitude git python-is-python3 tar aria2 perl wget curl lz4 libssl-dev \
+          gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi -y
+
+    - name: 🔧 Setup Clang ZyC Toolchain
+      run: |
+        mkdir -p clang
+        cd clang
+        curl -L -o zyc.tar.gz "https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230725-release/Clang-17.0.0-20230725.tar.gz"
+        tar -xzf zyc.tar.gz
+        rm -f zyc.tar.gz
+        cd ..
+
+    - name: 🥷 Implant NoMount
+      run: curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -
+
+    - name: 📥 Setup KernelSU-Next
+      if: ${{ matrix.build_type == 'KSU' || matrix.build_type == 'KSU-OEM' }}
+      run: |
+        curl -LSs "https://raw.githubusercontent.com/manipvlator/KernelSU-Next/stable/kernel/setup.sh" | bash -s syscall
+
+    - name: 📐 OEM Dimension
+      if: ${{ matrix.build_type == 'KSU-OEM' }}
+      run: |
+        sed -i 's/qcom,mdss-pan-physical-width-dimension = <69>;$/qcom,mdss-pan-physical-width-dimension = <695>;/' arch/arm64/boot/dts/qcom/xiaomi/sweet/dsi-panel-k6-38-0c-0a-fhd-dsc-video.dtsi
+        sed -i 's/qcom,mdss-pan-physical-height-dimension = <154>;$/qcom,mdss-pan-physical-height-dimension = <1546>;/' arch/arm64/boot/dts/qcom/xiaomi/sweet/dsi-panel-k6-38-0c-0a-fhd-dsc-video.dtsi
+
+    - name: 🛠️ Build Kernel via fly script
+      env:
+        TG_TOKEN: ${{ secrets.TG_TOKEN }}
+        TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        CLANG_PATH: ${{ github.workspace }}/clang
+      run: |
+        export PATH="${{ github.workspace }}/clang/bin:$PATH"
+        bash fly
+
+    - name: 💾 Upload Config
+      uses: actions/upload-artifact@v5
+      with:
+        name: configs-${{ matrix.build_type }}
+        path: out/.config
+
+    - name: 📤 Upload Flashable ZIP
+      uses: actions/upload-artifact@v5
+      with:
+        name: Mishiranu_${{ matrix.build_type }}-${{ github.ref_name }}
+        path: Mishiranu-AOSP-KSU.zip
