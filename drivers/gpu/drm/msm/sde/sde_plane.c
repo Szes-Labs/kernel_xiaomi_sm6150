@@ -3672,6 +3672,21 @@ static int sde_plane_sspp_atomic_check(struct drm_plane *plane,
 	if (!sde_plane_enabled(state))
 		goto modeset_update;
 
+	/*
+	 * If the plane is enabled but its source rect is empty (0x0), the
+	 * framebuffer data has not been filled in yet (e.g. an overlay / FOD
+	 * plane that is being committed before its buffer is ready). Committing
+	 * it with a zeroed source makes the DSI/SDE state machine choke and
+	 * causes a visible flicker on the boot animation and shortly after
+	 * home. Treat such a plane as off for this commit instead of pushing
+	 * a zero source rect through the pipeline.
+	 */
+	if (src.w == 0 || src.h == 0) {
+		SDE_DEBUG_PLANE(psde, "skip empty source rect %ux%u\n",
+				src.w, src.h);
+		goto modeset_update;
+	}
+
 	SDE_DEBUG(
 		"plane%d.%u sspp:%x/%dx%d/%4.4s/%llx/%dx%d+%d+%d crtc:%dx%d+%d+%d\n",
 			plane->base.id, rstate->sequence_id,
