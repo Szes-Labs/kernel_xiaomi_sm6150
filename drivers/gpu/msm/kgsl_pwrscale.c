@@ -810,6 +810,14 @@ int kgsl_busmon_target(struct device *dev, unsigned long *freq, u32 flags)
 
 int kgsl_busmon_get_cur_freq(struct device *dev, unsigned long *freq)
 {
+	struct kgsl_device *device = dev_get_drvdata(dev);
+
+	if (device == NULL)
+		return -ENODEV;
+	if (freq == NULL)
+		return -EINVAL;
+
+	*freq = kgsl_pwrctrl_active_freq(&device->pwrctrl);
 	return 0;
 }
 

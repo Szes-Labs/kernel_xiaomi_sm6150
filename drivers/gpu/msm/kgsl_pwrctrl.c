@@ -293,9 +293,16 @@ void kgsl_pwrctrl_buslevel_update(struct kgsl_device *device,
 	 * otherwise request bus level 0, off.
 	 */
 	if (on) {
-		buslevel = min_t(int, pwr->pwrlevels[0].bus_max,
-				cur + pwr->bus_mod);
-		buslevel = max_t(int, buslevel, 1);
+		/*
+		 * Allow the bus to drop to level 0 (lowest OPP, ~381MHz DDR)
+		 * when the GPU is at the lowest power level and no boost is
+		 * requested, instead of clamping to level 1 (800MHz).
+		 */
+		buslevel = cur + pwr->bus_mod;
+		if (buslevel > pwr->pwrlevels[0].bus_max)
+			buslevel = pwr->pwrlevels[0].bus_max;
+		if (buslevel < 0)
+			buslevel = 0;
 	} else {
 		/* If the bus is being turned off, reset to default level */
 		pwr->bus_mod = 0;
