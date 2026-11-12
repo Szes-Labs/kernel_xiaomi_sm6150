@@ -901,6 +901,7 @@ int kgsl_pwrscale_init(struct device *dev, const char *governor)
 	struct msm_adreno_extended_profile *gpu_profile;
 	struct devfreq_dev_profile *profile;
 	struct devfreq_msm_adreno_tz_data *data;
+	u32 max_gpu_freq;
 	int i, out = 0;
 	int ret;
 
@@ -1001,6 +1002,19 @@ int kgsl_pwrscale_init(struct device *dev, const char *governor)
 	}
 
 	pwrscale->devfreqptr = devfreq;
+
+	/*
+	 * Optional cap on the maximum GPU frequency.  The device tree can ask
+	 * for a lower ceiling than the highest power level to keep the GPU
+	 * from jumping to the top OPP (and heating up) for video/UI work.
+	 */
+	if (!of_property_read_u32(device->pdev->dev.of_node,
+			"qcom,max-gpu-freq", &max_gpu_freq) && max_gpu_freq) {
+		mutex_lock(&devfreq->lock);
+		if (max_gpu_freq < devfreq->max_freq)
+			devfreq->max_freq = max_gpu_freq;
+		mutex_unlock(&devfreq->lock);
+	}
 	pwrscale->cooling_dev = of_devfreq_cooling_register(
 					device->pdev->dev.of_node, devfreq);
 	if (IS_ERR(pwrscale->cooling_dev))
