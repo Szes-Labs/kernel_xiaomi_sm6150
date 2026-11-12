@@ -7926,6 +7926,28 @@ int dsi_display_post_enable(struct dsi_display *display)
 		dsi_display_clk_ctrl(display->dsi_clk_handle,
 			DSI_ALL_CLKS, DSI_CLK_OFF);
 
+	/*
+	 * After an ESD (PANEL_DEAD) event the DSI host is re-inited and
+	 * the panel is re-enabled with the DCS on-commands, which reset the
+	 * panel's backlight register to 0x00. With inverted-DBV panels that
+	 * maps to full brightness, so a white flash is visible during boot
+	 * animation until userspace re-applies the actual level. Re-apply
+	 * the last known panel level here to keep the backlight consistent.
+	 */
+	if (display->panel->bl_config.bl_level) {
+		u32 bl_scale = display->panel->bl_config.bl_scale;
+		u32 bl_scale_ad = display->panel->bl_config.bl_scale_ad;
+		u64 bl_temp;
+
+		bl_temp = display->panel->bl_config.bl_level * bl_scale /
+			MAX_BL_SCALE_LEVEL;
+		bl_temp = (u32)bl_temp * bl_scale_ad / MAX_AD_BL_SCALE_LEVEL;
+		rc = dsi_panel_set_backlight(display->panel, (u32)bl_temp);
+		if (rc)
+			pr_err("[%s] failed to restore backlight after "
+			       "recovery, rc=%d\n", display->name, rc);
+	}
+
 #ifdef CONFIG_MACH_XIAOMI_SWEET
 	dsi_panel_gamma_mode_change(display->panel, display->panel->cur_mode);
 #endif
