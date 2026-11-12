@@ -23,7 +23,6 @@ ZIPNAME="${KNAME}-${VAR}-${ROT}.zip"
 export ARCH=arm64
 export KBUILD_BUILD_USER="Szè"
 export KBUILD_BUILD_HOST="Haotian-#09"
-export KBUILD_COMPILER_STRING="Neutron Clang 12.0"
 
 SECONDS=0
 DOCKER_OS="$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME")"
@@ -48,7 +47,7 @@ tg_msg() {
         return 1
     fi
 
-    if grep -q '"ok"[[:space:]]*:[[:space:]]*true' <<< "$response"; then
+    if grep -q '"ok"[[:space]]*:[[:space]]*true' <<< "$response"; then
         return 0
     fi
 
@@ -97,7 +96,7 @@ tg_send_file() {
             return 1
         }
 
-    if grep -q '"ok"[[:space:]]*:[[:space:]]*true' <<< "$response"; then
+    if grep -q '"ok"[[:space]]*:[[:space]]*true' <<< "$response"; then
         echo "[Telegram] Upload successful!"
     else
         echo "[Telegram] Telegram API Error:"
