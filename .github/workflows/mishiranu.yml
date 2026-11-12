@@ -1,4 +1,4 @@
-name: Mishiranu Build
+name: Fly? Build
 
 on:
   workflow_dispatch:
@@ -12,7 +12,6 @@ jobs:
       matrix:
         build_type:
           - KSU
-          - KSU-OEM
           - Non-KSU
 
     steps:
@@ -39,19 +38,10 @@ jobs:
         rm -f zyc.tar.gz
         cd ..
 
-    - name: 🥷 Implant NoMount
-      run: curl https://raw.githubusercontent.com/maxsteeel/nomount/refs/heads/dev/kernel/setup.sh | bash -
-
     - name: 📥 Setup KernelSU-Next
-      if: ${{ matrix.build_type == 'KSU' || matrix.build_type == 'KSU-OEM' }}
+      if: ${{ matrix.build_type == 'KSU'}}
       run: |
         curl -LSs "https://raw.githubusercontent.com/manipvlator/KernelSU-Next/stable/kernel/setup.sh" | bash -s syscall
-
-    - name: 📐 OEM Dimension
-      if: ${{ matrix.build_type == 'KSU-OEM' }}
-      run: |
-        sed -i 's/qcom,mdss-pan-physical-width-dimension = <69>;$/qcom,mdss-pan-physical-width-dimension = <695>;/' arch/arm64/boot/dts/qcom/xiaomi/sweet/dsi-panel-k6-38-0c-0a-fhd-dsc-video.dtsi
-        sed -i 's/qcom,mdss-pan-physical-height-dimension = <154>;$/qcom,mdss-pan-physical-height-dimension = <1546>;/' arch/arm64/boot/dts/qcom/xiaomi/sweet/dsi-panel-k6-38-0c-0a-fhd-dsc-video.dtsi
 
     - name: 🛠️ Build Kernel via fly script
       env:
@@ -61,15 +51,3 @@ jobs:
       run: |
         export PATH="${{ github.workspace }}/clang/bin:$PATH"
         bash fly
-
-    - name: 💾 Upload Config
-      uses: actions/upload-artifact@v5
-      with:
-        name: configs-${{ matrix.build_type }}
-        path: out/.config
-
-    - name: 📤 Upload Flashable ZIP
-      uses: actions/upload-artifact@v5
-      with:
-        name: Mishiranu_${{ matrix.build_type }}-${{ github.ref_name }}
-        path: Mishiranu-AOSP-KSU.zip
