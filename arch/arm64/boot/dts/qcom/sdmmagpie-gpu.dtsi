@@ -70,13 +70,6 @@
 		qcom,idle-timeout = <64>;
 		qcom,no-nap;
 
-		/*
-		 * Cap the GPU at 650 MHz.  The top 800 MHz level is only
-		 * reachable for short bursts and mostly just adds heat while
-		 * decoding video / compositing the UI.
-		 */
-		qcom,max-gpu-freq = <650000000>;
-
 		qcom,highest-bank-bit = <14>;
 
 		qcom,min-access-length = <32>;
