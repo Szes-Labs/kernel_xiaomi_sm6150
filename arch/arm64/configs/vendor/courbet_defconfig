@@ -47,7 +47,7 @@ CONFIG_THREAD_INFO_IN_TASK=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_CROSS_COMPILE=""
 # CONFIG_COMPILE_TEST is not set
-CONFIG_LOCALVERSION="-shirayuki"
+CONFIG_LOCALVERSION="-Mishiranu"
 CONFIG_LOCALVERSION_AUTO=y
 CONFIG_DEFAULT_HOSTNAME="(none)"
 CONFIG_SWAP=y
@@ -136,8 +136,8 @@ CONFIG_GENERIC_SCHED_CLOCK=y
 #
 # FAIR Scheuler tunables
 #
-CONFIG_PELT_UTIL_HALFLIFE_32=y
-# CONFIG_PELT_UTIL_HALFLIFE_16 is not set
+# CONFIG_PELT_UTIL_HALFLIFE_32 is not set
+CONFIG_PELT_UTIL_HALFLIFE_16=y
 # CONFIG_PELT_UTIL_HALFLIFE_8 is not set
 CONFIG_ARCH_SUPPORTS_NUMA_BALANCING=y
 CONFIG_CGROUPS=y
@@ -172,7 +172,7 @@ CONFIG_NET_NS=y
 CONFIG_SCHED_BORE=y
 CONFIG_SCHED_CASS=y
 # CONFIG_SCHED_AUTOGROUP is not set
-CONFIG_SCHED_TUNE=y
+# CONFIG_SCHED_TUNE is not set
 CONFIG_DEFAULT_USE_ENERGY_AWARE=y
 # CONFIG_SYSFS_DEPRECATED is not set
 # CONFIG_RELAY is not set
@@ -399,13 +399,13 @@ CONFIG_IOSCHED_MAPLE=y
 CONFIG_IOSCHED_FIOPS=y
 CONFIG_IOSCHED_SIO=y
 # CONFIG_DEFAULT_DEADLINE is not set
-# CONFIG_DEFAULT_ZEN is not set
+CONFIG_DEFAULT_ZEN=y
 # CONFIG_DEFAULT_MAPLE is not set
 # CONFIG_DEFAULT_FIOPS is not set
 # CONFIG_DEFAULT_SIO is not set
-CONFIG_DEFAULT_KYBER=y
+# CONFIG_DEFAULT_KYBER is not set
 # CONFIG_DEFAULT_NOOP is not set
-CONFIG_DEFAULT_IOSCHED="kyber"
+CONFIG_DEFAULT_IOSCHED="zen"
 CONFIG_MQ_IOSCHED_DEADLINE=y
 CONFIG_MQ_IOSCHED_KYBER=y
 # CONFIG_IOSCHED_BFQ is not set
@@ -517,10 +517,6 @@ CONFIG_PCI_MSM=y
 # CONFIG_PCI_SW_QCOM_SWITCH is not set
 
 #
-# Kernel Features
-#
-
-#
 # ARM errata workarounds via the alternatives framework
 #
 CONFIG_ARM64_ERRATUM_826319=y
@@ -552,6 +548,8 @@ CONFIG_ARM64_VA_BITS=39
 CONFIG_SCHED_MC=y
 # CONFIG_SCHED_SMT is not set
 CONFIG_NR_CPUS=8
+CONFIG_LITTLE_CPU_MASK=63
+CONFIG_BIG_CPU_MASK=192
 CONFIG_HOTPLUG_CPU=y
 CONFIG_ARCH_ENABLE_MEMORY_HOTPLUG=y
 CONFIG_ARCH_ENABLE_MEMORY_HOTREMOVE=y
@@ -563,10 +561,10 @@ CONFIG_HOLES_IN_ZONE=y
 CONFIG_PREEMPT=y
 CONFIG_PREEMPT_COUNT=y
 # CONFIG_HZ_100 is not set
-# CONFIG_HZ_250 is not set
-CONFIG_HZ_300=y
+CONFIG_HZ_250=y
+# CONFIG_HZ_300 is not set
 # CONFIG_HZ_1000 is not set
-CONFIG_HZ=300
+CONFIG_HZ=250
 CONFIG_SCHED_HRTICK=y
 CONFIG_ARCH_SUPPORTS_DEBUG_PAGEALLOC=y
 CONFIG_ARCH_HAS_HOLES_MEMORYMODEL=y
@@ -725,10 +723,6 @@ CONFIG_ARCH_HIBERNATION_POSSIBLE=y
 CONFIG_ARCH_SUSPEND_POSSIBLE=y
 
 #
-# CPU Power Management
-#
-
-#
 # CPU Idle
 #
 CONFIG_CPU_IDLE=y
@@ -749,6 +743,7 @@ CONFIG_ARM_CPUIDLE=y
 #
 CONFIG_CPU_FREQ=y
 CONFIG_CPU_FREQ_GOV_ATTR_SET=y
+CONFIG_CPU_FREQ_GOV_COMMON=y
 CONFIG_CPU_FREQ_STAT=y
 CONFIG_CPU_FREQ_TIMES=y
 # CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE is not set
@@ -766,9 +761,10 @@ CONFIG_CPU_FREQ_GOV_POWERSAVE=y
 # CONFIG_CPU_BOOST is not set
 CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
 CONFIG_CPU_FREQ_GOV_REFLEX=y
-CONFIG_CPU_FREQ_GOV_VORPAL=y
+# CONFIG_CPU_FREQ_GOV_VORPAL is not set
 # CONFIG_CPU_FREQ_GOV_INTERACTIVE is not set
 # CONFIG_CPU_FREQ_GOV_NERV is not set
+# CONFIG_CPU_INPUT_BOOST is not set
 
 #
 # CPU frequency scaling drivers
@@ -1405,14 +1401,6 @@ CONFIG_QCOM_EBI2=y
 # CONFIG_SIMPLE_PM_BUS is not set
 # CONFIG_VEXPRESS_CONFIG is not set
 # CONFIG_MHI_BUS is not set
-
-#
-# MHI controllers
-#
-
-#
-# MHI device support
-#
 # CONFIG_CONNECTOR is not set
 # CONFIG_GNSS is not set
 # CONFIG_MTD is not set
@@ -1438,11 +1426,16 @@ CONFIG_BLK_DEV=y
 # CONFIG_BLK_DEV_NULL_BLK is not set
 # CONFIG_BLK_DEV_PCIESSD_MTIP32XX is not set
 CONFIG_ZRAM=y
-# CONFIG_ZRAM_DEDUP is not set
+CONFIG_ZRAM_DEDUP=y
 CONFIG_ZRAM_WRITEBACK=y
+CONFIG_ZRAM_DEFAULT_COMP_ALGORITHM="lzo"
 CONFIG_ZRAM_ENTROPY=y
 CONFIG_ZRAM_ENTROPY_THRESHOLD=100000
 CONFIG_ZRAM_MULTI_COMP=y
+CONFIG_ZRAM_DEFAULT_RECOMP_ALGORITHM="lz4"
+CONFIG_ZRAM_AUTO_RECOMP=y
+CONFIG_ZRAM_AUTO_RECOMP_INTERVAL=30
+CONFIG_ZRAM_AUTO_RECOMP_PAGES=2048
 # CONFIG_BLK_DEV_DAC960 is not set
 # CONFIG_BLK_DEV_UMEM is not set
 # CONFIG_BLK_DEV_COW_COMMON is not set
@@ -1525,34 +1518,6 @@ CONFIG_FORCE_FAST_CHARGE=y
 # Altera FPGA firmware download module
 #
 # CONFIG_ALTERA_STAPL is not set
-
-#
-# Intel MIC Bus Driver
-#
-
-#
-# SCIF Bus Driver
-#
-
-#
-# VOP Bus Driver
-#
-
-#
-# Intel MIC Host Driver
-#
-
-#
-# Intel MIC Card Driver
-#
-
-#
-# SCIF Driver
-#
-
-#
-# Intel MIC Coprocessor State Management (COSM) Drivers
-#
 
 #
 # VOP Driver
@@ -1722,14 +1687,6 @@ CONFIG_TUN=y
 CONFIG_VETH=y
 # CONFIG_NLMON is not set
 # CONFIG_ARCNET is not set
-
-#
-# CAIF transport drivers
-#
-
-#
-# Distributed Switch Architecture drivers
-#
 CONFIG_ETHERNET=y
 CONFIG_NET_VENDOR_3COM=y
 # CONFIG_VORTEX is not set
@@ -2366,10 +2323,6 @@ CONFIG_HW_RANDOM=y
 CONFIG_HW_RANDOM_MSM_LEGACY=y
 CONFIG_HW_RANDOM_CAVIUM=y
 # CONFIG_APPLICOM is not set
-
-#
-# PCMCIA character devices
-#
 # CONFIG_RAW_DRIVER is not set
 # CONFIG_TCG_TPM is not set
 # CONFIG_DEVPORT is not set
@@ -2409,10 +2362,6 @@ CONFIG_I2C_MUX_PCA954x=y
 # CONFIG_I2C_MUX_MLXCPLD is not set
 CONFIG_I2C_HELPER_AUTO=y
 CONFIG_I2C_ALGOBIT=y
-
-#
-# I2C Hardware Bus support
-#
 
 #
 # PC SMBus host controller drivers
@@ -2527,17 +2476,9 @@ CONFIG_PPS=y
 # CONFIG_PPS_CLIENT_GPIO is not set
 
 #
-# PPS generators support
-#
-
-#
 # PTP clock support
 #
 CONFIG_PTP_1588_CLOCK=y
-
-#
-# Enable PHYLIB and NETWORK_PHY_TIMESTAMPING to see the additional clocks.
-#
 CONFIG_PINCTRL=y
 
 #
@@ -2612,10 +2553,6 @@ CONFIG_GPIO_SYSFS=y
 # CONFIG_GPIO_TPIC2810 is not set
 
 #
-# MFD GPIO expanders
-#
-
-#
 # PCI GPIO expanders
 #
 # CONFIG_GPIO_BT8XX is not set
@@ -2630,10 +2567,6 @@ CONFIG_GPIO_SYSFS=y
 # CONFIG_GPIO_MC33880 is not set
 # CONFIG_GPIO_PISOSR is not set
 # CONFIG_GPIO_XRA1403 is not set
-
-#
-# USB GPIO expanders
-#
 
 #
 # GNSS SIRF controls
@@ -2849,9 +2782,9 @@ CONFIG_THERMAL_EMERGENCY_POWEROFF_DELAY_MS=0
 CONFIG_THERMAL_HWMON=y
 CONFIG_THERMAL_OF=y
 CONFIG_THERMAL_WRITABLE_TRIPS=y
-# CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE is not set
+CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y
 # CONFIG_THERMAL_DEFAULT_GOV_FAIR_SHARE is not set
-CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE=y
+# CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE is not set
 # CONFIG_THERMAL_DEFAULT_GOV_POWER_ALLOCATOR is not set
 # CONFIG_THERMAL_GOV_FAIR_SHARE is not set
 CONFIG_THERMAL_GOV_STEP_WISE=y
@@ -2864,10 +2797,6 @@ CONFIG_CPU_THERMAL=y
 CONFIG_DEVFREQ_THERMAL=y
 # CONFIG_THERMAL_EMULATION is not set
 # CONFIG_QORIQ_THERMAL is not set
-
-#
-# ACPI INT340X thermal drivers
-#
 CONFIG_QCOM_SPMI_TEMP_ALARM=y
 # CONFIG_GENERIC_ADC_THERMAL is not set
 CONFIG_THERMAL_TSENS=y
@@ -2887,6 +2816,7 @@ CONFIG_QTI_BCL_SOC_DRIVER=y
 CONFIG_QTI_ADC_TM=y
 CONFIG_QTI_CX_IPEAK_COOLING_DEVICE=y
 # CONFIG_QTI_BUS_SCALING_COOLING_DEVICE is not set
+CONFIG_MSM_THERMAL_SIMPLE=y
 # CONFIG_WATCHDOG is not set
 CONFIG_SSB_POSSIBLE=y
 
@@ -3165,22 +3095,6 @@ CONFIG_MSM_NPU=y
 # CONFIG_DVB_PLATFORM_DRIVERS is not set
 
 #
-# Qualcomm Technologies, Inc. MSM Camera And Video
-#
-
-#
-# Qualcomm Technologies, Inc. Demux device config
-#
-
-#
-# Qualcomm Technologies, Inc. MSM Camera And Video
-#
-
-#
-# Qualcomm Technologies, Inc. Demux device config
-#
-
-#
 # Supported MMC/SDIO adapters
 #
 # CONFIG_SMS_SDIO_DRV is not set
@@ -3192,54 +3106,6 @@ CONFIG_MSM_NPU=y
 CONFIG_MEDIA_SUBDRV_AUTOSELECT=y
 CONFIG_MEDIA_ATTACH=y
 CONFIG_VIDEO_IR_I2C=y
-
-#
-# Audio decoders, processors and mixers
-#
-
-#
-# RDS decoders
-#
-
-#
-# Video decoders
-#
-
-#
-# Video and audio decoders
-#
-
-#
-# Video encoders
-#
-
-#
-# Camera sensor devices
-#
-
-#
-# Flash devices
-#
-
-#
-# Video improvement chips
-#
-
-#
-# Audio/Video compression chips
-#
-
-#
-# SDR tuner chips
-#
-
-#
-# Miscellaneous helper chips
-#
-
-#
-# Sensors used on soc_camera driver
-#
 CONFIG_MEDIA_TUNER=y
 CONFIG_MEDIA_TUNER_SIMPLE=y
 CONFIG_MEDIA_TUNER_TDA8290=y
@@ -3253,46 +3119,10 @@ CONFIG_MEDIA_TUNER_XC4000=y
 CONFIG_MEDIA_TUNER_MC44S803=y
 
 #
-# Multistandard (satellite) frontends
-#
-
-#
-# Multistandard (cable + terrestrial) frontends
-#
-
-#
-# DVB-S (satellite) frontends
-#
-
-#
 # DVB-T (terrestrial) frontends
 #
 # CONFIG_DVB_AS102_FE is not set
 # CONFIG_DVB_GP8PSK_FE is not set
-
-#
-# DVB-C (cable) frontends
-#
-
-#
-# ATSC (North American/Korean Terrestrial/Cable DTV) frontends
-#
-
-#
-# ISDB-T (terrestrial) frontends
-#
-
-#
-# ISDB-S (satellite) & ISDB-T (terrestrial) frontends
-#
-
-#
-# Digital terrestrial only tuners/PLL
-#
-
-#
-# SEC control devices for DVB-S
-#
 
 #
 # Tools to develop new frontends
@@ -3323,10 +3153,6 @@ CONFIG_DRM_KMS_HELPER=y
 # CONFIG_DRM_MALI_DISPLAY is not set
 # CONFIG_DRM_RADEON is not set
 # CONFIG_DRM_AMDGPU is not set
-
-#
-# ACP (Audio CoProcessor) Configuration
-#
 # CONFIG_DRM_NOUVEAU is not set
 # CONFIG_DRM_VGEM is not set
 # CONFIG_DRM_UDL is not set
@@ -3348,7 +3174,7 @@ CONFIG_DRM_MSM_DSI_STAGING=y
 CONFIG_DRM_SDE_WB=y
 # CONFIG_DRM_SDE_SHD is not set
 # CONFIG_DRM_SDE_SHP is not set
-# CONFIG_EXPOSURE_ADJUSTMENT is not set
+CONFIG_EXPOSURE_ADJUSTMENT=y
 CONFIG_DRM_MSM_KCAL_CTRL=y
 CONFIG_DRM_SDE_EVTLOG_DEBUG=y
 CONFIG_DRM_SDE_RSC=y
@@ -3519,10 +3345,6 @@ CONFIG_SND_DRIVERS=y
 # CONFIG_SND_SERIAL_U16550 is not set
 # CONFIG_SND_MPU401 is not set
 # CONFIG_SND_PCI is not set
-
-#
-# HD-Audio
-#
 CONFIG_SND_HDA_PREALLOC_SIZE=64
 CONFIG_SND_SPI=y
 CONFIG_SND_USB=y
@@ -3544,10 +3366,6 @@ CONFIG_SND_SOC_COMPRESS=y
 # CONFIG_SND_DESIGNWARE_I2S is not set
 
 #
-# SoC Audio for Freescale CPUs
-#
-
-#
 # Common SoC Audio options for Freescale CPUs:
 #
 # CONFIG_SND_SOC_FSL_ASRC is not set
@@ -3559,10 +3377,6 @@ CONFIG_SND_SOC_COMPRESS=y
 # CONFIG_SND_I2S_HI6210_I2S is not set
 # CONFIG_SND_SOC_IMG is not set
 # CONFIG_SND_SOC_QCOM is not set
-
-#
-# STMicroelectronics STM32 SOC audio support
-#
 # CONFIG_SND_SOC_XTFPGA_I2S is not set
 # CONFIG_ZX_TDM is not set
 CONFIG_SND_SOC_I2C_AND_SPI=y
@@ -3842,10 +3656,6 @@ CONFIG_USB_XHCI_PLATFORM=y
 # CONFIG_USB_PRINTER is not set
 # CONFIG_USB_WDM is not set
 # CONFIG_USB_TMC is not set
-
-#
-# NOTE: USB_STORAGE depends on SCSI but BLK_DEV_SD may
-#
 
 #
 # also be needed; see USB_STORAGE Help for more info
@@ -4342,10 +4152,6 @@ CONFIG_STAGING=y
 # CONFIG_RTS5208 is not set
 
 #
-# IIO staging drivers
-#
-
-#
 # Accelerometers
 #
 # CONFIG_ADIS16201 is not set
@@ -4410,16 +4216,8 @@ CONFIG_STAGING=y
 # CONFIG_AD2S90 is not set
 # CONFIG_AD2S1200 is not set
 # CONFIG_AD2S1210 is not set
-
-#
-# Triggers - standalone
-#
 # CONFIG_FB_SM750 is not set
 # CONFIG_FB_XGI is not set
-
-#
-# Speakup console speech
-#
 # CONFIG_STAGING_MEDIA is not set
 
 #
@@ -4666,21 +4464,9 @@ CONFIG_RPMSG_QCOM_GLINK_SPI=y
 # CONFIG_MSM_RPM_SMD is not set
 
 #
-# SOC (System On Chip) specific Drivers
-#
-
-#
-# Amlogic SoC drivers
-#
-
-#
 # Broadcom SoC drivers
 #
 # CONFIG_SOC_BRCMSTB is not set
-
-#
-# i.MX SoC drivers
-#
 
 #
 # Qualcomm SoC drivers
@@ -4939,17 +4725,9 @@ CONFIG_QCOM_SPMI_ADC5=y
 # CONFIG_VZ89X is not set
 
 #
-# Hid Sensor IIO Common
-#
-
-#
 # SSP Sensor Common
 #
 # CONFIG_IIO_SSP_SENSORHUB is not set
-
-#
-# Counters
-#
 
 #
 # Digital to analog converters
@@ -4981,14 +4759,6 @@ CONFIG_QCOM_SPMI_ADC5=y
 # CONFIG_VF610_DAC is not set
 
 #
-# IIO dummy driver
-#
-
-#
-# Frequency Synthesizers DDS/PLL
-#
-
-#
 # Clock Generator/Distribution
 #
 # CONFIG_AD9523 is not set
@@ -5010,10 +4780,6 @@ CONFIG_QCOM_SPMI_ADC5=y
 # CONFIG_MPU3050_I2C is not set
 # CONFIG_IIO_ST_GYRO_3AXIS is not set
 # CONFIG_ITG3200 is not set
-
-#
-# Health Sensors
-#
 
 #
 # Heart Rate Monitors
@@ -5103,10 +4869,6 @@ CONFIG_QCOM_SPMI_ADC5=y
 # Multiplexers
 #
 # CONFIG_IIO_MUX is not set
-
-#
-# Inclinometer sensors
-#
 
 #
 # Triggers - standalone
@@ -5293,17 +5055,7 @@ CONFIG_KSU_HEURISTIC_IN_TREE_BUILD=y
 #
 # KernelSU - SUSFS
 #
-CONFIG_KSU_SUSFS=y
-CONFIG_KSU_SUSFS_SUS_PATH=y
-CONFIG_KSU_SUSFS_SUS_MOUNT=y
-CONFIG_KSU_SUSFS_SUS_KSTAT=y
-CONFIG_KSU_SUSFS_TRY_UMOUNT=y
-CONFIG_KSU_SUSFS_SPOOF_UNAME=y
-CONFIG_KSU_SUSFS_ENABLE_LOG=y
-CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
-CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
-CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
-CONFIG_KSU_SUSFS_SUS_MAP=y
+# CONFIG_KSU_SUSFS is not set
 
 #
 # Firmware Drivers
@@ -5317,10 +5069,6 @@ CONFIG_QCOM_SCM_64=y
 CONFIG_HAVE_ARM_SMCCC=y
 # CONFIG_GOOGLE_FIRMWARE is not set
 # CONFIG_MESON_SM is not set
-
-#
-# Tegra firmware driver
-#
 # CONFIG_ACPI is not set
 
 #
@@ -5535,10 +5283,6 @@ CONFIG_UNICODE=y
 # CONFIG_UNICODE_NORMALIZATION_SELFTEST is not set
 # CONFIG_FILE_TABLE_DEBUG is not set
 # CONFIG_VIRTUALIZATION is not set
-
-#
-# Kernel hacking
-#
 
 #
 # printk and dmesg options
@@ -5809,10 +5553,6 @@ CONFIG_DEFAULT_SECURITY_SELINUX=y
 CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf"
 
 #
-# Kernel hardening options
-#
-
-#
 # Memory initialization
 #
 CONFIG_INIT_STACK_NONE=y
@@ -6027,6 +5767,7 @@ CONFIG_CRC32_SLICEBY8=y
 # CONFIG_CRC7 is not set
 CONFIG_LIBCRC32C=y
 CONFIG_CRC8=y
+CONFIG_XXHASH=y
 CONFIG_AUDIT_GENERIC=y
 CONFIG_AUDIT_ARCH_COMPAT_GENERIC=y
 CONFIG_AUDIT_COMPAT_GENERIC=y
@@ -6087,16 +5828,6 @@ CONFIG_MACH_XIAOMI_SDMMAGPIE=y
 # Xiaomi board selection
 #
 CONFIG_MACH_XIAOMI_COURBET=y
-# CONFIG_MACH_XIAOMI_DAVINCI is not set
-# CONFIG_MACH_XIAOMI_PHOENIX is not set
-# CONFIG_MACH_XIAOMI_SWEET is not set
-# CONFIG_MACH_XIAOMI_TOCO is not set
-# CONFIG_MACH_XIAOMI_TUCANA is not set
-# CONFIG_MACH_XIAOMI_VIOLET is not set
-
-#
-# Tech packages
-#
 
 #
 # Techpack audio options
