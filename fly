@@ -4,7 +4,10 @@ KERNEL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEVICE="courbet"
 DEVICE_NAME="Xiaomi Mi 11 Lite"
 KNAME="Mishiranu"
-VAR="OEM"
+
+# Otomatis mengikuti nama branch (AOSP / OEM), default ke OEM jika tidak ada
+VAR="${BRANCH_NAME:+${BRANCH_NAME^^}}"
+VAR="${VAR:-OEM}"
 ROT="KSU"
 
 ANYKERNEL_REPO="https://github.com/Szetian/AnyKernel3.git"
@@ -28,6 +31,7 @@ SECONDS=0
 DOCKER_OS="$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME")"
 DATE="$(TZ=Asia/Jakarta date '+%d %B %Y, %H:%M WIB')"
 COMPILER="$(clang --version 2>/dev/null | head -n1)"
+KVER="$(make -s -C "$KERNEL_DIR" kernelversion 2>/dev/null || echo "Unknown")"
 
 
 esc() {
@@ -47,14 +51,13 @@ tg_msg() {
         return 1
     fi
 
-    if grep -q '"ok"[[:space]]*:[[:space]]*true' <<< "$response"; then
+    if [[ "$response" == *'"ok":true'* ]]; then
         return 0
     fi
 
     echo "[Telegram] Pesan ditolak: $response"
     return 1
 }
-
 
 
 tg_send_file() {
@@ -77,7 +80,7 @@ tg_send_file() {
     filename="$(basename "$file")"
 
     # Telegram Bot API limit
-    if (( $(stat -c%s "$file") > 50 * 1024 * 1024 )); then
+    if (( $(stat -c\%s "$file") > 50 * 1024 * 1024 )); then
         echo "[Telegram] File melebihi batas 50 MB."
         return 1
     fi
@@ -85,9 +88,6 @@ tg_send_file() {
     echo "[Telegram] Uploading: $filename"
     echo "[Telegram] Path: $file"
 
-    # Pass the file path quoted so paths containing spaces work, and keep
-    # the caption out of the multipart request: mixing a long, multi-line
-    # caption into the same request can make Telegram reject the upload.
     response=$(curl -sS \
         -F "chat_id=${TG_CHAT_ID}" \
         -F "document=@\"${file}\";filename=${filename}" \
@@ -96,7 +96,7 @@ tg_send_file() {
             return 1
         }
 
-    if grep -q '"ok"[[:space]]*:[[:space]]*true' <<< "$response"; then
+    if [[ "$response" == *'"ok":true'* ]]; then
         echo "[Telegram] Upload successful!"
     else
         echo "[Telegram] Telegram API Error:"
@@ -110,9 +110,8 @@ tg_send_file() {
 }
 
 
-
 duration() {
-    echo "$((SECONDS / 60)) minutes $((SECONDS % 60)) seconds"
+    echo "$((SECONDS / 60)) minutes$((SECONDS % 60)) seconds"
 }
 
 fail() {
@@ -122,11 +121,12 @@ fail() {
     local message="<b>Build Failed!</b>
 
 <b>Device:</b> $DEVICE_NAME ($DEVICE)
+<b>Variant:</b> $VAR ($ROT)
 <b>Error:</b> $(esc "$reason")
 <b>Build took:</b> $(duration)"
 
     if [[ -n "$log_file" && -f "$log_file" ]]; then
-        tg_send_file "$log_file" "$message" || tg_msg "$message"
+        tg_send_file "$log_file" "$message" \vert{}\vert{} tg_msg "$message"
     else
         tg_msg "$message"
     fi
@@ -141,6 +141,7 @@ tg_msg "<b>Kernel Build Triggered</b>
 <b>Date:</b> $DATE
 <b>Device:</b> $DEVICE_NAME
 <b>Codename:</b> $DEVICE
+<b>Variant:</b> $VAR
 <b>Kernel Version:</b> $KVER
 <b>Root:</b> $ROT
 <b>Compiler:</b> $(esc "$COMPILER")" || echo "[Telegram] Notifikasi awal gagal."
@@ -148,7 +149,7 @@ tg_msg "<b>Kernel Build Triggered</b>
 cd "$KERNEL_DIR" || exit 1
 
 
-if [[ "${1:-}" == "-c" || "${1:-}" == "--clean" ]]; then
+if [[ "${1:-}" == "-c" \vert{}\vert{} "${1:-}" == "--clean" ]]; then
     echo "Cleaning output..."
     rm -rf "$OUT"
 fi
@@ -161,6 +162,8 @@ echo "Loading defconfig..."
 
 make O="$OUT" \
     ARCH=arm64 \
+    LLVM=1 \
+    LLVM_IAS=1 \
     CC=clang \
     CROSS_COMPILE=aarch64-linux-gnu- \
     vendor/courbet_defconfig 2>&1 | tee -a "$BUILD_LOG"
@@ -179,7 +182,7 @@ make -j"$(nproc --all)" \
     LLVM=1 \
     LLVM_IAS=1 \
     CC=clang \
-    CLANG_TRIPLE="${CLANG_PATH:-$GITHUB_WORKSPACE/clang}/aarch64-linux-gnu/bin/" \
+    CLANG_TRIPLE=aarch64-linux-gnu- \
     CROSS_COMPILE="${CLANG_PATH:-$GITHUB_WORKSPACE/clang}/bin/aarch64-linux-gnu-" \
     CROSS_COMPILE_ARM32="${CLANG_PATH:-$GITHUB_WORKSPACE/clang}/bin/arm-linux-gnueabi-" \
     2>&1 | tee -a "$BUILD_LOG"
@@ -225,8 +228,8 @@ MD5="$(md5sum "$KERNEL_DIR/$ZIPNAME" | cut -d' ' -f1)"
 MESSAGE="<b>Build Finished!</b>
 
 <b>Device:</b> $DEVICE_NAME ($DEVICE)
-<b>Variant:</b> $ROT
-<b>Package:</b> Flashable AnyKernel3 ZIP
+<b>Variant:</b> $VAR ($ROT)
+<b>Package:</b> <code>$ZIPNAME</code>
 <b>Size:</b> $SIZE
 <b>Build took:</b> $(duration)
 <b>MD5:</b> <code>$MD5</code>"
@@ -241,4 +244,4 @@ if ! tg_send_file "$KERNEL_DIR/$ZIPNAME" "$MESSAGE"; then
 fi
 
 echo
-echo "Build complete: $ZIPNAME ($(duration))"
+echo "Build complete: $ZIP
