@@ -13,6 +13,9 @@
 #include <linux/slab.h>
 #include <linux/thermal.h>
 
+cpumask_t cpu_lp_mask;
+cpumask_t cpu_perf_mask;
+
 #define OF_READ_U32(node, prop, dst)						\
 ({										\
 	int ret = of_property_read_u32(node, prop, &(dst));			\
