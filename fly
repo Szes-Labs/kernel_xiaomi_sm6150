@@ -1,13 +1,22 @@
+
 #!/usr/bin/env bash
 
+set -uo pipefail
+
+# ==========================================
+# Kernel Configuration
+# ==========================================
+
 KERNEL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 DEVICE="courbet"
 DEVICE_NAME="Xiaomi Mi 11 Lite"
 KNAME="Mishiranu"
 
-# Otomatis mengikuti nama branch (AOSP / OEM), default ke OEM jika tidak ada
+# Automatically detect build variant
 VAR="${BRANCH_NAME:+${BRANCH_NAME^^}}"
 VAR="${VAR:-OEM}"
+
 ROT="KSU"
 
 ANYKERNEL_REPO="https://github.com/Szetian/AnyKernel3.git"
@@ -17,48 +26,85 @@ OUT="$KERNEL_DIR/out"
 KERNEL="$OUT/arch/arm64/boot/Image.gz"
 DTBO="$OUT/arch/arm64/boot/dtbo.img"
 DTB="$OUT/arch/arm64/boot/dtb.img"
+
 BUILD_LOG="$KERNEL_DIR/build.log"
 ZIPNAME="${KNAME}-${VAR}-${ROT}.zip"
+
+# ==========================================
+# Telegram Configuration
+# ==========================================
 
 : "${TG_TOKEN:?TG_TOKEN belum di-set}"
 : "${TG_CHAT_ID:?TG_CHAT_ID belum di-set}"
 
+# ==========================================
+# Compiler Configuration
+# ==========================================
+
 export ARCH=arm64
+export SUBARCH=arm64
+
 export KBUILD_BUILD_USER="Szè"
 export KBUILD_BUILD_HOST="Haotian-#09"
 
+# Optional Clang directory
+if [[ -n "${CLANG_PATH:-}" ]]; then
+    export PATH="$CLANG_PATH/bin:$PATH"
+elif [[ -n "${GITHUB_WORKSPACE:-}" && -d "$GITHUB_WORKSPACE/clang/bin" ]]; then
+    export PATH="$GITHUB_WORKSPACE/clang/bin:$PATH"
+fi
+
+CLANG="${CLANG:-clang}"
+
+# GNU cross compiler prefixes
+CROSS_COMPILE="${CROSS_COMPILE:-aarch64-linux-gnu-}"
+CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32:-arm-linux-gnueabi-}"
+
+# ==========================================
+# Build Information
+# ==========================================
+
 SECONDS=0
+
 DOCKER_OS="$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME")"
 DATE="$(TZ=Asia/Jakarta date '+%d %B %Y, %H:%M WIB')"
-COMPILER="$(clang --version 2>/dev/null | head -n1)"
+COMPILER="$("$CLANG" --version 2>/dev/null | head -n1)"
 KVER="$(make -s -C "$KERNEL_DIR" kernelversion 2>/dev/null || echo "Unknown")"
 
+# ==========================================
+# Helper Functions
+# ==========================================
 
 esc() {
     sed 's/\&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' <<< "$1"
 }
 
+duration() {
+    printf '%d minutes %d seconds' \
+        "$((SECONDS / 60))" \
+        "$((SECONDS % 60))"
+}
+
 tg_msg() {
     local response
 
-    if ! response="$(curl -sS \
+    response="$(curl -sS \
         --data-urlencode "chat_id=$TG_CHAT_ID" \
         --data-urlencode "parse_mode=HTML" \
         --data-urlencode "disable_web_page_preview=true" \
         --data-urlencode "text=$1" \
-        "https://api.telegram.org/bot${TG_TOKEN}/sendMessage")"; then
-        echo "[Telegram] Gagal mengirim pesan (curl error)."
+        "https://api.telegram.org/bot${TG_TOKEN}/sendMessage")" || {
+        echo "[Telegram] Failed to send message."
         return 1
-    fi
+    }
 
     if [[ "$response" == *'"ok":true'* ]]; then
         return 0
     fi
 
-    echo "[Telegram] Pesan ditolak: $response"
+    echo "[Telegram] API Error: $response"
     return 1
 }
-
 
 tg_send_file() {
     local file="$1"
@@ -66,52 +112,45 @@ tg_send_file() {
     local response
     local filename
 
-    # Resolve absolute path
     file="$(realpath -e -- "$file")" || {
-        echo "[Telegram] File tidak ditemukan!"
+        echo "[Telegram] File not found!"
         return 1
     }
 
     if [[ ! -r "$file" ]]; then
-        echo "[Telegram] Cannot Read: $file"
+        echo "[Telegram] Cannot read: $file"
         return 1
     fi
 
     filename="$(basename "$file")"
 
-    # Telegram Bot API limit
-    if (( $(stat -c\%s "$file") > 50 * 1024 * 1024 )); then
-        echo "[Telegram] File melebihi batas 50 MB."
+    # Telegram Bot API upload limit
+    if (( $(stat -c%s -- "$file") > 50 * 1024 * 1024 )); then
+        echo "[Telegram] File exceeds 50 MB."
         return 1
     fi
 
     echo "[Telegram] Uploading: $filename"
-    echo "[Telegram] Path: $file"
 
-    response=$(curl -sS \
+    response="$(curl -sS \
         -F "chat_id=${TG_CHAT_ID}" \
-        -F "document=@\"${file}\";filename=${filename}" \
-        "https://api.telegram.org/bot${TG_TOKEN}/sendDocument") || {
-            echo "[Telegram] CURL upload failed."
-            return 1
-        }
+        -F "document=@${file}" \
+        "https://api.telegram.org/bot${TG_TOKEN}/sendDocument")" || {
+        echo "[Telegram] CURL upload failed."
+        return 1
+    }
 
     if [[ "$response" == *'"ok":true'* ]]; then
         echo "[Telegram] Upload successful!"
     else
-        echo "[Telegram] Telegram API Error:"
-        echo "$response"
+        echo "[Telegram] API Error: $response"
         return 1
     fi
 
-    # Deliver the caption as a separate message after the file is up.
-    tg_msg "$caption" || echo "[Telegram] Caption message gagal, file sudah terkirim."
+    tg_msg "$caption" || \
+        echo "[Telegram] Caption failed, file already uploaded."
+
     return 0
-}
-
-
-duration() {
-    echo "$((SECONDS / 60)) minutes$((SECONDS % 60)) seconds"
 }
 
 fail() {
@@ -125,8 +164,11 @@ fail() {
 <b>Error:</b> $(esc "$reason")
 <b>Build took:</b> $(duration)"
 
+    echo
+    echo "[BUILD FAILED] $reason"
+
     if [[ -n "$log_file" && -f "$log_file" ]]; then
-        tg_send_file "$log_file" "$message" \vert{}\vert{} tg_msg "$message"
+        tg_send_file "$log_file" "$message" || tg_msg "$message"
     else
         tg_msg "$message"
     fi
@@ -134,6 +176,9 @@ fail() {
     exit 1
 }
 
+# ==========================================
+# Initial Notification
+# ==========================================
 
 tg_msg "<b>Kernel Build Triggered</b>
 
@@ -144,12 +189,16 @@ tg_msg "<b>Kernel Build Triggered</b>
 <b>Variant:</b> $VAR
 <b>Kernel Version:</b> $KVER
 <b>Root:</b> $ROT
-<b>Compiler:</b> $(esc "$COMPILER")" || echo "[Telegram] Notifikasi awal gagal."
+<b>Compiler:</b> $(esc "$COMPILER")" || \
+    echo "[Telegram] Initial notification failed."
+
+# ==========================================
+# Prepare Build
+# ==========================================
 
 cd "$KERNEL_DIR" || exit 1
 
-
-if [[ "${1:-}" == "-c" \vert{}\vert{} "${1:-}" == "--clean" ]]; then
+if [[ "${1:-}" == "-c" || "${1:-}" == "--clean" ]]; then
     echo "Cleaning output..."
     rm -rf "$OUT"
 fi
@@ -157,62 +206,104 @@ fi
 mkdir -p "$OUT"
 : > "$BUILD_LOG"
 
+# ==========================================
+# Load Defconfig
+# ==========================================
 
+echo
+echo "=========================================="
 echo "Loading defconfig..."
+echo "=========================================="
 
 make O="$OUT" \
     ARCH=arm64 \
     LLVM=1 \
     LLVM_IAS=1 \
-    CC=clang \
-    CROSS_COMPILE=aarch64-linux-gnu- \
-    vendor/courbet_defconfig 2>&1 | tee -a "$BUILD_LOG"
+    CC="$CLANG" \
+    CROSS_COMPILE="$CROSS_COMPILE" \
+    CROSS_COMPILE_ARM32="$CROSS_COMPILE_ARM32" \
+    vendor/courbet_defconfig \
+    2>&1 | tee -a "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}
+
 if (( BUILD_STATUS != 0 )); then
-    fail "Defconfig failed" "$BUILD_LOG"
+    fail "Defconfig failed (exit code: $BUILD_STATUS)" "$BUILD_LOG"
 fi
 
+# ==========================================
+# Compile Kernel
+# ==========================================
 
+echo
+echo "=========================================="
 echo "Compiling kernel..."
+echo "=========================================="
 
 make -j"$(nproc --all)" \
     O="$OUT" \
     ARCH=arm64 \
     LLVM=1 \
     LLVM_IAS=1 \
-    CC=clang \
+    CC="$CLANG" \
     CLANG_TRIPLE=aarch64-linux-gnu- \
-    CROSS_COMPILE="${CLANG_PATH:-$GITHUB_WORKSPACE/clang}/bin/aarch64-linux-gnu-" \
-    CROSS_COMPILE_ARM32="${CLANG_PATH:-$GITHUB_WORKSPACE/clang}/bin/arm-linux-gnueabi-" \
+    CROSS_COMPILE="$CROSS_COMPILE" \
+    CROSS_COMPILE_ARM32="$CROSS_COMPILE_ARM32" \
     2>&1 | tee -a "$BUILD_LOG"
 
 BUILD_STATUS=${PIPESTATUS[0]}
+
 if (( BUILD_STATUS != 0 )) || [[ ! -f "$KERNEL" ]]; then
-    fail "Kernel compilation failed" "$BUILD_LOG"
+    fail "Kernel compilation failed (exit code: $BUILD_STATUS)" "$BUILD_LOG"
 fi
 
+echo
+echo "[BUILD] Kernel compiled successfully!"
 
+# ==========================================
+# Package AnyKernel3
+# ==========================================
+
+echo
+echo "=========================================="
 echo "Packaging AnyKernel3..."
+echo "=========================================="
 
 AK_DIR="$KERNEL_DIR/AnyKernel3"
+
 rm -rf "$AK_DIR"
 
-git clone -q -b "$ANYKERNEL_BRANCH" "$ANYKERNEL_REPO" "$AK_DIR" \
-    || fail "AnyKernel3 clone failed"
+git clone -q \
+    -b "$ANYKERNEL_BRANCH" \
+    "$ANYKERNEL_REPO" \
+    "$AK_DIR" || fail "AnyKernel3 clone failed"
 
-sed -i 's/device\.name1=.*/device.name1=courbet/' "$AK_DIR/anykernel.sh"
-sed -i 's/device\.name2=.*/device.name2=courbetin/' "$AK_DIR/anykernel.sh"
+# Device configuration
+sed -i 's/device\.name1=.*/device.name1=courbet/' \
+    "$AK_DIR/anykernel.sh"
 
-cp "$KERNEL" "$AK_DIR/"
+sed -i 's/device\.name2=.*/device.name2=courbetin/' \
+    "$AK_DIR/anykernel.sh"
+
+# Copy kernel image
+cp "$KERNEL" "$AK_DIR/" || fail "Failed to copy kernel image"
+
+# Copy optional device images
 [[ -f "$DTBO" ]] && cp "$DTBO" "$AK_DIR/"
 [[ -f "$DTB" ]] && cp "$DTB" "$AK_DIR/"
 
+# ==========================================
+# Create ZIP
+# ==========================================
+
 rm -f "$KERNEL_DIR/$ZIPNAME"
+
 (
     cd "$AK_DIR" &&
-    zip -r9 "$KERNEL_DIR/$ZIPNAME" . -x '*.git*' '*.github*' >/dev/null
+    zip -r9 "$KERNEL_DIR/$ZIPNAME" . \
+        -x '*.git*' '*.github*' >/dev/null
 )
+
 ZIP_STATUS=$?
 
 rm -rf "$AK_DIR"
@@ -221,6 +312,12 @@ if (( ZIP_STATUS != 0 )) || [[ ! -f "$KERNEL_DIR/$ZIPNAME" ]]; then
     fail "ZIP creation failed"
 fi
 
+echo
+echo "[BUILD] ZIP created successfully!"
+
+# ==========================================
+# Build Summary
+# ==========================================
 
 SIZE="$(du -h "$KERNEL_DIR/$ZIPNAME" | cut -f1)"
 MD5="$(md5sum "$KERNEL_DIR/$ZIPNAME" | cut -d' ' -f1)"
@@ -234,14 +331,27 @@ MESSAGE="<b>Build Finished!</b>
 <b>Build took:</b> $(duration)
 <b>MD5:</b> <code>$MD5</code>"
 
-if ! tg_send_file "$KERNEL_DIR/$ZIPNAME" "$MESSAGE"; then
-    tg_msg "<b>Build complete</b>
+# ==========================================
+# Upload to Telegram
+# ==========================================
 
-<b>Package:</b> $ZIPNAME
+if ! tg_send_file "$KERNEL_DIR/$ZIPNAME" "$MESSAGE"; then
+    tg_msg "<b>Build complete, but upload failed!</b>
+
+<b>Package:</b> <code>$ZIPNAME</code>
 <b>Size:</b> $SIZE
 <b>MD5:</b> <code>$MD5</code>"
+
     exit 1
 fi
 
+
 echo
-echo "Build complete: $ZIP
+echo "=========================================="
+echo "Build complete!"
+echo "Device: $DEVICE"
+echo "Package: $ZIPNAME"
+echo "Size: $SIZE"
+echo "MD5: $MD5"
+echo "Build took: $(duration)"
+echo "=========================================="
