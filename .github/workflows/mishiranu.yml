@@ -5,49 +5,47 @@ on:
 
 jobs:
   Mishiranu:
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.branch }} - KSU)
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - KSU
-          - Non-KSU
+        branch:
+          - aosp
+          - oem
 
     steps:
-    - name: 🔄 Checkout Code
-      uses: actions/checkout@v5
+      - name: 🔄 Checkout Code (${{ matrix.branch }})
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 1
 
-    - name: ⏰ Prepare timezone
-      run: |
-        sudo rm /etc/localtime
-        sudo ln -s /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+      - name: ⏰ Prepare timezone
+        run: sudo timedatectl set-timezone Asia/Jakarta
 
-    - name: 📦 Install Dependencies
-      run: |
-        sudo apt update -y
-        sudo apt install bc cpio flex bison aptitude git python-is-python3 tar aria2 perl wget curl lz4 libssl-dev \
-          gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi -y
+      - name: 📦 Install Dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install -y bc cpio flex bison aptitude git python-is-python3 tar aria2 perl wget curl lz4 libssl-dev \
+            gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
 
-    - name: 🔧 Setup Clang ZyC Toolchain
-      run: |
-        mkdir -p clang
-        cd clang
-        curl -L -o zyc.tar.gz "https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230725-release/Clang-17.0.0-20230725.tar.gz"
-        tar -xzf zyc.tar.gz
-        rm -f zyc.tar.gz
-        cd ..
+      - name: 🔧 Setup Clang ZyC Toolchain
+        run: |
+          mkdir -p clang
+          curl -L "https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230725-release/Clang-17.0.0-20230725.tar.gz" | tar -xz -C clang
 
-    - name: 📥 Setup KernelSU-Next
-      if: ${{ matrix.build_type == 'KSU'}}
-      run: |
-        curl -LSs "https://raw.githubusercontent.com/manipvlator/KernelSU-Next/stable/kernel/setup.sh" | bash -s syscall
+      - name: 📥 Setup KernelSU
+        run: |
+          curl -LSs "https://raw.githubusercontent.com/manipvlator/KernelSU/refs/heads/main/kernel/setup.sh" | bash -s main
 
-    - name: 🛠️ Build Kernel via fly script
-      env:
-        TG_TOKEN: ${{ secrets.TG_TOKEN }}
-        TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-        CLANG_PATH: ${{ github.workspace }}/clang
-      run: |
-        export PATH="${{ github.workspace }}/clang/bin:$PATH"
-        bash fly
+      - name: 🛠️ Build Kernel via fly script
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          CLANG_PATH: ${{ github.workspace }}/clang
+          BRANCH_NAME: ${{ matrix.branch }}
+        run: |
+          export PATH="${{ github.workspace }}/clang/bin:$PATH"
+          bash fly
