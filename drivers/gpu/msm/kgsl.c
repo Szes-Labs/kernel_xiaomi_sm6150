@@ -255,6 +255,13 @@ static void kgsl_memfree_add(pid_t pid, pid_t ptname, uint64_t gpuaddr,
 	spin_unlock(&memfree_lock);
 }
 
+int kgsl_readtimestamp(struct kgsl_device *device, void *priv,
+		enum kgsl_timestamp_type type, unsigned int *timestamp)
+{
+	return device->ftbl->readtimestamp(device, priv, type, timestamp);
+}
+EXPORT_SYMBOL(kgsl_readtimestamp);
+
 /* Scheduled by kgsl_mem_entry_put_deferred() */
 static void _deferred_put(struct work_struct *work)
 {
@@ -811,6 +818,18 @@ static struct kgsl_device *kgsl_get_minor(int minor)
  * @context: Pointer to the context for the timestamp
  * @timestamp: The timestamp to compare
  */
+int kgsl_check_timestamp(struct kgsl_device *device,
+	struct kgsl_context *context, unsigned int timestamp)
+{
+	unsigned int ts_processed;
+
+	kgsl_readtimestamp(device, context, KGSL_TIMESTAMP_RETIRED,
+		&ts_processed);
+
+	return (timestamp_cmp(ts_processed, timestamp) >= 0);
+}
+EXPORT_SYMBOL(kgsl_check_timestamp);
+
 static int kgsl_suspend_device(struct kgsl_device *device, pm_message_t state)
 {
 	int status = -EINVAL;
@@ -2206,7 +2225,7 @@ static long gpuobj_free_on_fence(struct kgsl_device_private *dev_priv,
 	}
 
 	handle = kgsl_sync_fence_async_wait(event.fd,
-		gpuobj_free_fence_func, entry);
+		gpuobj_free_fence_func, entry, NULL);
 
 	if (IS_ERR(handle)) {
 		kgsl_mem_entry_unset_pend(entry);
@@ -4810,9 +4829,8 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 
 	vma->vm_ops = &kgsl_gpumem_vm_ops;
 
-	if (!(entry->memdesc.flags & KGSL_MEMFLAGS_IOCOHERENT) &&
-		(cache == KGSL_CACHEMODE_WRITEBACK ||
-		 cache == KGSL_CACHEMODE_WRITETHROUGH)) {
+	if (cache == KGSL_CACHEMODE_WRITEBACK
+		|| cache == KGSL_CACHEMODE_WRITETHROUGH) {
 		int i;
 		unsigned long addr = vma->vm_start;
 		struct kgsl_memdesc *m = &entry->memdesc;
@@ -5110,6 +5128,9 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 				PM_QOS_DEFAULT_VALUE);
 	}
 
+	/* Initialize the snapshot engine */
+	kgsl_device_snapshot_init(device);
+
 	/* Initialize common sysfs entries */
 	kgsl_pwrctrl_init_sysfs(device);
 
@@ -5135,6 +5156,8 @@ void kgsl_device_platform_remove(struct kgsl_device *device)
 
 	kfree(device->dev->dma_parms);
 	device->dev->dma_parms = NULL;
+
+	kgsl_device_snapshot_close(device);
 
 	kgsl_exit_page_pools();
 
@@ -5197,7 +5220,7 @@ static void kgsl_core_exit(void)
 static int __init kgsl_core_init(void)
 {
 	int result = 0;
-	struct sched_param param = { .sched_priority = 16 };
+	struct sched_param param = { .sched_priority = 2 };
 
 	place_marker("M - DRIVER KGSL Init");
 
