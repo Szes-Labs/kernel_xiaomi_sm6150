@@ -22,12 +22,28 @@
 #include "a6xx_reg.h"
 #include "adreno_a6xx.h"
 #include "adreno_trace.h"
+#include "adreno_snapshot.h"
 
 /* RGMU timeouts */
 #define RGMU_IDLE_TIMEOUT		100	/* ms */
 #define RGMU_START_TIMEOUT		100	/* ms */
 #define GPU_START_TIMEOUT		100	/* ms */
 #define GLM_SLEEP_TIMEOUT		10	/* ms */
+
+static const unsigned int a6xx_rgmu_registers[] = {
+	/*GPUCX_TCM */
+	0x1B400, 0x1B7FF,
+	/* GMU CX */
+	0x1F80F, 0x1F83D, 0x1F840, 0x1F8D8, 0x1F990, 0x1F99E, 0x1F9C0, 0x1F9CC,
+	/* GMU AO */
+	0x23B03, 0x23B16, 0x23B80, 0x23B82,
+	/* GPU CC */
+	0x24000, 0x24012, 0x24040, 0x24052, 0x24400, 0x24404, 0x24407, 0x2440B,
+	0x24415, 0x2441C, 0x2441E, 0x2442D, 0x2443C, 0x2443D, 0x2443F, 0x24440,
+	0x24442, 0x24449, 0x24458, 0x2445A, 0x24540, 0x2455E, 0x24800, 0x24802,
+	0x24C00, 0x24C02, 0x25400, 0x25402, 0x25800, 0x25802, 0x25C00, 0x25C02,
+	0x26000, 0x26002,
+};
 
 irqreturn_t rgmu_irq_handler(int irq, void *data)
 {
@@ -550,6 +566,7 @@ static void a6xx_rgmu_halt_execution(struct kgsl_device *device)
 
 	/*
 	 * Ensure that fence is in allow mode after halting RGMU.
+	 * After halting RGMU we dump snapshot.
 	 */
 	gmu_core_regwrite(device, A6XX_GMU_AO_AHB_FENCE_CTRL, 0);
 

@@ -1699,6 +1699,7 @@ static int gmu_start(struct kgsl_device *device)
 error_gmu:
 	if (ADRENO_QUIRK(adreno_dev, ADRENO_QUIRK_HFI_USE_REG))
 		gmu_dev_ops->oob_clear(adreno_dev, oob_boot_slumber);
+	gmu_core_snapshot(device);
 	return ret;
 }
 
@@ -1746,6 +1747,7 @@ error:
 	 */
 	set_bit(GMU_FAULT, &device->gmu_core.flags);
 	dev_err(&gmu->pdev->dev, "Failed to stop GMU\n");
+	gmu_core_snapshot(device);
 }
 
 static void gmu_remove(struct kgsl_device *device)
