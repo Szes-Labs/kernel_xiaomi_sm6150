@@ -41,6 +41,7 @@
 
 #include "a3xx_reg.h"
 #include "a6xx_reg.h"
+#include "adreno_snapshot.h"
 
 /* Include the master list of GPU cores that are supported */
 #include "adreno-gpulist.h"
@@ -2102,8 +2103,12 @@ static int _adreno_start(struct adreno_device *adreno_dev)
 		goto error_oob_clear;
 
 	/*
-	 * At this point it is safe to assume that we recovered.
+	 * At this point it is safe to assume that we recovered. Setting
+	 * this field allows us to take a new snapshot for the next failure
+	 * if we are prioritizing the first unrecoverable snapshot.
 	 */
+	if (device->snapshot)
+		device->snapshot->recovered = true;
 
 	/* Start the dispatcher */
 	adreno_dispatcher_start(device);
@@ -2205,6 +2210,7 @@ static int adreno_stop(struct kgsl_device *device)
 			if (gmu_core_regulator_isenabled(device)) {
 				/* GPU is on. Try recovery */
 				set_bit(GMU_FAULT, &device->gmu_core.flags);
+				gmu_core_snapshot(device);
 				error = -EINVAL;
 			} else {
 				return error;
@@ -2247,6 +2253,7 @@ static int adreno_stop(struct kgsl_device *device)
 			gmu_dev_ops->wait_for_lowest_idle(adreno_dev)) {
 
 		set_bit(GMU_FAULT, &device->gmu_core.flags);
+		gmu_core_snapshot(device);
 		/*
 		 * Assume GMU hang after 10ms without responding.
 		 * It shall be relative safe to clear vbif and stop
