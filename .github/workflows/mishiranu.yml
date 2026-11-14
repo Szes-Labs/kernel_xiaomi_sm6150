@@ -2,18 +2,35 @@ name: Fly? Build
 
 on:
   workflow_dispatch:
+    inputs:
+      ksu:
+        description: "KernelSU"
+        required: true
+        type: choice
+        options:
+          - ksu
+          - non-ksu
+        default: ksu
+
+      target:
+        description: "Build Target"
+        required: true
+        type: choice
+        options:
+          - aosp
+          - oem
+          - both
+        default: both
 
 jobs:
   Mishiranu:
-    name: Build (${{ matrix.branch }} - KSU)
+    name: Build (${{ matrix.branch }} - ${{ inputs.ksu }})
     runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
       matrix:
-        branch:
-          - aosp
-          - oem
+        branch: ${{ inputs.target == 'both' && fromJSON('["aosp", "oem"]') || fromJSON(format('["{0}"]', inputs.target)) }}
 
     steps:
       - name: 🔄 Checkout Code (${{ matrix.branch }})
@@ -37,6 +54,7 @@ jobs:
           curl -L "https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230725-release/Clang-17.0.0-20230725.tar.gz" | tar -xz -C clang
 
       - name: 📥 Setup KernelSU
+        if: ${{ inputs.ksu == 'ksu' }}
         run: |
           curl -LSs "https://raw.githubusercontent.com/manipvlator/KernelSU/refs/heads/main/kernel/setup.sh" | bash -s main
 
@@ -46,6 +64,8 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           CLANG_PATH: ${{ github.workspace }}/clang
           BRANCH_NAME: ${{ matrix.branch }}
+          KSU: ${{ inputs.ksu }}
         run: |
           export PATH="${{ github.workspace }}/clang/bin:$PATH"
           bash fly
+
