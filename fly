@@ -176,18 +176,11 @@ fail() {
     exit 1
 }
 
-# ==========================================
-# Initial Notification
-# ==========================================
-
 tg_msg "<b>Kernel Build Triggered</b>
 
 <b>Docker OS:</b> $(esc "$DOCKER_OS")
 <b>Date:</b> $DATE
-<b>Device:</b> $DEVICE_NAME
-<b>Codename:</b> $DEVICE
 <b>Variant:</b> $VAR
-<b>Kernel Version:</b> $KVER
 <b>Root:</b> $ROT
 <b>Compiler:</b> $(esc "$COMPILER")" || \
     echo "[Telegram] Initial notification failed."
@@ -324,9 +317,8 @@ MD5="$(md5sum "$KERNEL_DIR/$ZIPNAME" | cut -d' ' -f1)"
 
 MESSAGE="<b>Build Finished!</b>
 
-<b>Device:</b> $DEVICE_NAME ($DEVICE)
+<b>Device:</b> $DEVICE
 <b>Variant:</b> $VAR ($ROT)
-<b>Package:</b> <code>$ZIPNAME</code>
 <b>Size:</b> $SIZE
 <b>Build took:</b> $(duration)
 <b>MD5:</b> <code>$MD5</code>"
