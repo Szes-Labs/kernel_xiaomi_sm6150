@@ -41,7 +41,7 @@
 		serial0 = &qupv3_se0_2uart;
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
-		spi0 = &qupv3_se6_spi;
+		spi0 = &qupv3_se4_spi;
 		i2c0 = &qupv3_se5_i2c;
 		i2c1 = &qupv3_se1_i2c;
 		i2c2 = &qupv3_se3_i2c;
@@ -631,6 +631,11 @@
 		dfps_data_memory: dfps_data_region@9cf00000 {
 			reg = <0x0 0x9cf00000 0x0 0x0100000>;
 			label = "dfps_data_region";
+		};
+
+		disp_rdump_memory: disp_rdump_region@9c000000 {
+			reg = <0x0 0x9c000000 0x0 0x0f00000>;
+			label = "disp_rdump_region";
 		};
 
 		dump_mem: mem_dump_region {
@@ -3251,6 +3256,7 @@
 #include "sm6150-camera.dtsi"
 #include "sm6150-ion.dtsi"
 #include "msm-arm-smmu-sm6150.dtsi"
+#include "sm6150-coresight.dtsi"
 #include "sm6150-bus.dtsi"
 #include "sm6150-vidc.dtsi"
 #include "sm6150-audio.dtsi"

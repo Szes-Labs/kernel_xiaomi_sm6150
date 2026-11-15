@@ -419,16 +419,14 @@
 
 		CLUSTER_COST_0: cluster-cost0 {
 			busy-cost-data = <
-				300000	5
-				576000	5
-				768000	5
-				1017600	7
-				1248000	8
-				1324800	10
-				1497600	10
-				1612800	12
-				1708800	14
-				1804800	14
+				576000		5
+				768000		7
+				1017600		8
+				1248000		10
+				1324800		10
+				1497600		12
+				1612800		14
+				1708800		14
 			>;
 			idle-cost-data = <
 				5 4 3 2 1
@@ -598,6 +596,14 @@
 			size = <0 0xc00000>;
 		};
 
+		ramoops: ramoops@b0000000 {
+			compatible = "removed-dma-pool", "ramoops";
+			no-map;
+			reg = <0 0xb0000000 0 0x400000>;
+			record-size = <0x00200000>;
+			console-size = <0x00200000>;
+		};
+
 		cdsp_mem: cdsp_region {
 			compatible = "shared-dma-pool";
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
@@ -627,7 +633,7 @@
 			alloc-ranges = <0 0x00000000 0 0xffffffff>;
 			reusable;
 			alignment = <0 0x400000>;
-			size = <0 0x8c00000>;
+			size = <0 0x5c00000>;
 		};
 
 		cont_splash_memory: cont_splash_region@9c000000 {
@@ -649,6 +655,17 @@
 			size = <0 0x2000000>;
 			linux,cma-default;
 		};
+
+		/* reserve for pstore */
+		ramoops_mem: ramoops@9d800000 {
+			compatible = "ramoops";
+			reg = <0x0 0x9d800000 0x0 0x00400000>;
+
+			record-size = <0x200000>;
+			pmsg-size = <0x200000>;
+			ecc-size = <16>;
+			max-reason = <4>;
+		};
 	};
 };
 
@@ -667,7 +684,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU0>;
-		status = "disabled";
 	};
 
 	jtag_mm1: jtagmm@7140000 {
@@ -679,7 +695,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU1>;
-		status = "disabled";
 	};
 
 	jtag_mm2: jtagmm@7240000 {
@@ -691,7 +706,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU2>;
-		status = "disabled";
 	};
 
 	jtag_mm3: jtagmm@7340000 {
@@ -703,7 +717,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU3>;
-		status = "disabled";
 	};
 
 	jtag_mm4: jtagmm@7440000 {
@@ -715,7 +728,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU4>;
-		status = "disabled";
 	};
 
 	jtag_mm5: jtagmm@7540000 {
@@ -727,7 +739,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU5>;
-		status = "disabled";
 	};
 
 	jtag_mm6: jtagmm@7640000 {
@@ -739,7 +750,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU6>;
-		status = "disabled";
 	};
 
 	jtag_mm7: jtagmm@7740000 {
@@ -751,7 +761,6 @@
 		clock-names = "core_clk";
 
 		qcom,coresight-jtagmm-cpu = <&CPU7>;
-		status = "disabled";
 	};
 
 	intc: interrupt-controller@17a00000 {
@@ -1792,7 +1801,7 @@
 
 				msm_cdsp_rm: qcom,msm_cdsp_rm {
 					compatible = "qcom,msm-cdsp-rm";
-					qcom,qos-latency-us = <44>;
+					qcom,qos-latency-us = <67>;
 					qcom,qos-maxhold-ms = <20>;
 					qcom,compute-cx-limit-en;
 					qcom,compute-priority-mode = <2>;
@@ -3276,6 +3285,7 @@
 #include "pm8009.dtsi"
 #include "sdmmagpie-regulator.dtsi"
 #include "sdmmagpie-camera.dtsi"
+#include "sdmmagpie-coresight.dtsi"
 #include "sdmmagpie-usb.dtsi"
 #include "sdmmagpie-thermal.dtsi"
 
