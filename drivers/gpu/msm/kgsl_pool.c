@@ -222,7 +222,7 @@ kgsl_pool_reduce(unsigned int target_pages, bool exit)
 		 * reclaim; reserved pages are only freed on driver exit.
 		 */
 		if (!exit) {
-			int shrinkable = pool->page_count -
+			int shrinkable = atomic_read(&pool->page_count) -
 					(int)pool->reserved_pages;
 
 			if (shrinkable <= 0)
