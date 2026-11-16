@@ -1,4 +1,5 @@
 #include "courbet/dsi-panel-k9a-36-02-0a-mp-dsc-cmd.dtsi"
+#include "courbet/dsi-panel-k9a-42-02-0b-mp-dsc-cmd.dtsi"
 
 #include "../sdmmagpie-sde-display.dtsi"
 
@@ -26,11 +27,23 @@
 
 		 qcom,dsi-panel = <&dsi_k9a_36_02_0a_mp_dsc_cmd>;
 	};
+
+	dsi_k9a_42_02_0b_mp_dsc_cmd_display: qcom,dsi-display@27 {
+		 label = "mdss_dsi_k9a_42_02_0b_mp_dsc_cmd";
+		 qcom,display-type = "primary";
+
+		 qcom,dsi-ctrl-num = <0>;
+		 qcom,dsi-phy-num = <0>;
+		 qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+
+		 qcom,dsi-panel = <&dsi_k9a_42_02_0b_mp_dsc_cmd>;
+	};
 };
 
 &sde_dsi {
 	qcom,dsi-display-list =
-		<&dsi_k9a_36_02_0a_mp_dsc_cmd_display>;
+		<&dsi_k9a_36_02_0a_mp_dsc_cmd_display
+		&dsi_k9a_42_02_0b_mp_dsc_cmd_display>;
 };
 
 &dsi_k9a_36_02_0a_mp_dsc_cmd {
@@ -52,5 +65,27 @@
 			qcom,display-topology = <1 1 1>;
 			qcom,default-topology-index = <0>;
 		 };
+	};
+};
+
+&dsi_k9a_42_02_0b_mp_dsc_cmd {
+	qcom,mdss-dsi-t-clk-post = <0x0C>;
+	qcom,mdss-dsi-t-clk-pre = <0x2A>;
+
+	qcom,mdss-dsi-display-timings {
+		/* 60 Hz */
+		timing@0{
+			qcom,mdss-dsi-panel-phy-timings = [00 18 06 06 21 20 06
+					06 07 02 04 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
+		/* 90 Hz */
+		timing@1{
+			qcom,mdss-dsi-panel-phy-timings = [00 18 06 06 21 20 06
+					06 07 02 04 00];
+			qcom,display-topology = <1 1 1>;
+			qcom,default-topology-index = <0>;
+		};
 	};
 };
