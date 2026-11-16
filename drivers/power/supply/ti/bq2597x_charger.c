@@ -496,6 +496,7 @@ static int bq2597x_enable_charge(struct bq2597x *bq, bool enable)
 
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_charge);
 
 static int bq2597x_check_charge_enabled(struct bq2597x *bq, bool *enabled)
 {
@@ -524,6 +525,31 @@ static int bq2597x_enable_wdt(struct bq2597x *bq, bool enable)
 				BQ2597X_WATCHDOG_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_wdt);
+
+static int bq2597x_set_wdt(struct bq2597x *bq, int ms)
+{
+	int ret;
+	u8 val;
+
+	if (ms == 500)
+		val = BQ2597X_WATCHDOG_0P5S;
+	else if (ms == 1000)
+		val = BQ2597X_WATCHDOG_1S;
+	else if (ms == 5000)
+		val = BQ2597X_WATCHDOG_5S;
+	else if (ms == 30000)
+		val = BQ2597X_WATCHDOG_30S;
+	else
+		val = BQ2597X_WATCHDOG_30S;
+
+	val <<= BQ2597X_WATCHDOG_SHIFT;
+
+	ret = bq2597x_update_bits(bq, BQ2597X_REG_0B,
+				BQ2597X_WATCHDOG_MASK, val);
+	return ret;
+}
+EXPORT_SYMBOL_GPL(bq2597x_set_wdt);
 
 static int bq2597x_enable_batovp(struct bq2597x *bq, bool enable)
 {
@@ -541,6 +567,7 @@ static int bq2597x_enable_batovp(struct bq2597x *bq, bool enable)
 				BQ2597X_BAT_OVP_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_batovp);
 
 static int bq2597x_set_batovp_th(struct bq2597x *bq, int threshold)
 {
@@ -563,6 +590,7 @@ static int bq2597x_set_batovp_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BAT_OVP_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_batovp_th);
 
 static int bq2597x_enable_batovp_alarm(struct bq2597x *bq, bool enable)
 {
@@ -580,6 +608,7 @@ static int bq2597x_enable_batovp_alarm(struct bq2597x *bq, bool enable)
 				BQ2597X_BAT_OVP_ALM_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_batovp_alarm);
 
 static int bq2597x_set_batovp_alarm_th(struct bq2597x *bq, int threshold)
 {
@@ -597,6 +626,7 @@ static int bq2597x_set_batovp_alarm_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BAT_OVP_ALM_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_batovp_alarm_th);
 
 static int bq2597x_enable_batocp(struct bq2597x *bq, bool enable)
 {
@@ -614,6 +644,7 @@ static int bq2597x_enable_batocp(struct bq2597x *bq, bool enable)
 				BQ2597X_BAT_OCP_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_batocp);
 
 static int bq2597x_set_batocp_th(struct bq2597x *bq, int threshold)
 {
@@ -631,6 +662,7 @@ static int bq2597x_set_batocp_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BAT_OCP_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_batocp_th);
 
 static int bq2597x_enable_batocp_alarm(struct bq2597x *bq, bool enable)
 {
@@ -648,6 +680,7 @@ static int bq2597x_enable_batocp_alarm(struct bq2597x *bq, bool enable)
 				BQ2597X_BAT_OCP_ALM_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_batocp_alarm);
 
 static int bq2597x_set_batocp_alarm_th(struct bq2597x *bq, int threshold)
 {
@@ -665,6 +698,7 @@ static int bq2597x_set_batocp_alarm_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BAT_OCP_ALM_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_batocp_alarm_th);
 
 static int bq2597x_set_busovp_th(struct bq2597x *bq, int threshold)
 {
@@ -682,6 +716,7 @@ static int bq2597x_set_busovp_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BUS_OVP_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_busovp_th);
 
 static int bq2597x_enable_busovp_alarm(struct bq2597x *bq, bool enable)
 {
@@ -699,6 +734,7 @@ static int bq2597x_enable_busovp_alarm(struct bq2597x *bq, bool enable)
 				BQ2597X_BUS_OVP_ALM_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_busovp_alarm);
 
 static int bq2597x_set_busovp_alarm_th(struct bq2597x *bq, int threshold)
 {
@@ -716,6 +752,7 @@ static int bq2597x_set_busovp_alarm_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BUS_OVP_ALM_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_busovp_alarm_th);
 
 static int bq2597x_enable_busocp(struct bq2597x *bq, bool enable)
 {
@@ -733,6 +770,7 @@ static int bq2597x_enable_busocp(struct bq2597x *bq, bool enable)
 				BQ2597X_BUS_OCP_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_busocp);
 
 static int bq2597x_set_busocp_th(struct bq2597x *bq, int threshold)
 {
@@ -750,6 +788,7 @@ static int bq2597x_set_busocp_th(struct bq2597x *bq, int threshold)
 				BQ2597X_BUS_OCP_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_set_busocp_th);
 
 static int bq2597x_enable_busocp_alarm(struct bq2597x *bq, bool enable)
 {
@@ -767,6 +806,7 @@ static int bq2597x_enable_busocp_alarm(struct bq2597x *bq, bool enable)
 				BQ2597X_BUS_OCP_ALM_DIS_MASK, val);
 	return ret;
 }
+EXPORT_SYMBOL_GPL(bq2597x_enable_busocp_alarm);
 
 static int bq2597x_set_busocp_alarm_th(struct bq2597x *bq, int threshold)
 {
