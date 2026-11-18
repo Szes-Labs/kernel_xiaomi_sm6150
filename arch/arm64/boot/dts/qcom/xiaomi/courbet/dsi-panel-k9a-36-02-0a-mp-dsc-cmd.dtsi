@@ -293,6 +293,7 @@
 	qcom,esd-err-irq-gpio = <&tlmm 32 0x2002>;
 
 	qcom,esd-check-enabled;
+	qcom,esd-aod-check-enabled;
 	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
 	qcom,mdss-dsi-panel-status-offset-command = [
 		39 01 00 00 00 00 05 FF AA 55 A5 81
