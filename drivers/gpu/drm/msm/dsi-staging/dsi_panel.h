@@ -172,6 +172,7 @@ enum esd_check_status_mode {
 
 struct drm_panel_esd_config {
 	bool esd_enabled;
+	bool esd_aod_enabled;
 
 	enum esd_check_status_mode status_mode;
 	struct dsi_panel_cmd_set status_cmd;
@@ -266,6 +267,7 @@ struct dsi_panel {
 	 * panel has left AOD (LP1/LP2 -> NOLP).
 	 */
 	bool in_aod;
+	bool panel_dead_flag;
 	u32 last_bl_lvl;
 	struct delayed_work nolp_bl_delay_work;
 
