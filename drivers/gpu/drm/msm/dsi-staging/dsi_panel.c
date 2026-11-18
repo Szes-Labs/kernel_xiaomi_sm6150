@@ -3585,13 +3585,13 @@ static int dsi_panel_parse_esd_config(struct dsi_panel *panel)
 				__func__, esd_config->esd_err_irq_gpio, rc);
 		else
 			gpio_direction_input(esd_config->esd_err_irq_gpio);
-
-		return 0;
 	}
 #endif
-	
+
 	esd_config->esd_enabled = utils->read_bool(utils->data,
 		"qcom,esd-check-enabled");
+	esd_config->esd_aod_enabled = utils->read_bool(utils->data,
+		"qcom,esd-aod-check-enabled");
 
 	if (!esd_config->esd_enabled)
 		return 0;
