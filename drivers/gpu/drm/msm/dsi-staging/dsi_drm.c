@@ -225,7 +225,13 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 		cancel_delayed_work_sync(&prim_panel_work);
 		__pm_relax(&prim_panel_wakelock);
 	#ifdef CONFIG_MACH_XIAOMI_COURBET
-		if (!(c_bridge->dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DMS))
+		/*
+		 * Command mode panels can handle DMS, but only after the
+		 * continuous splash handover. Switching on the first frame
+		 * fails because the DSI controller is still owned by splash.
+		 */
+		if (!(c_bridge->dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DMS) ||
+		    c_bridge->display->is_cont_splash_enabled)
 			return;
 	#else
 		return;
