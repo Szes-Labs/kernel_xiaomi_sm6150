@@ -457,7 +457,7 @@ static int _sde_connector_update_power_locked(struct sde_connector *c_conn)
 	c_conn->last_panel_power_mode = mode;
 
 	mutex_unlock(&c_conn->lock);
-	if (mode != SDE_MODE_DPMS_ON)
+	if (mode > c_conn->max_esd_check_power_mode)
 		sde_connector_schedule_status_work(connector, false);
 	else
 		sde_connector_schedule_status_work(connector, true);
@@ -1896,7 +1896,7 @@ static irqreturn_t esd_err_irq_handle(int irq, void *data)
 	bool panel_on = false;
 	char err_irq_gpio_value = 1;
 
-	if (!c_conn && !c_conn->display) {
+	if (!c_conn || !c_conn->display) {
 		SDE_ERROR("not able to get connector object\n");
 		return IRQ_HANDLED;
 	}
@@ -1913,6 +1913,7 @@ static irqreturn_t esd_err_irq_handle(int irq, void *data)
 	if (panel_on && (c_conn->panel_dead == false) && err_irq_gpio_value == 0) {
 		SDE_ERROR("esd check irq report PANEL_DEAD conn_id: %d enc_id: %d, panel_status[%d]\n",
 		c_conn->base.base.id, c_conn->encoder->base.id, panel_on);
+		dsi_display->panel->panel_dead_flag = true;
 		c_conn->panel_dead = true;
 		event.type = DRM_EVENT_PANEL_DEAD;
 		event.length = sizeof(bool);
@@ -2259,6 +2260,7 @@ struct drm_connector *sde_connector_init(struct drm_device *dev,
 	c_conn->dpms_mode = DRM_MODE_DPMS_ON;
 	c_conn->lp_mode = 0;
 	c_conn->last_panel_power_mode = SDE_MODE_DPMS_ON;
+	c_conn->max_esd_check_power_mode = SDE_MODE_DPMS_ON;
 
 	sde_kms = to_sde_kms(priv->kms);
 	if (sde_kms->vbif[VBIF_NRT]) {
@@ -2363,17 +2365,22 @@ struct drm_connector *sde_connector_init(struct drm_device *dev,
 
 #ifdef CONFIG_MACH_XIAOMI_COURBET
 		/* register esd irq and enable it after panel enabled */
-		if (dsi_display && dsi_display->panel &&
-			dsi_display->panel->esd_config.esd_err_irq_gpio > 0) {
-			rc = request_threaded_irq(dsi_display->panel->esd_config.esd_err_irq,
+		if (dsi_display && dsi_display->panel) {
+			if (dsi_display->panel->esd_config.esd_aod_enabled)
+				c_conn->max_esd_check_power_mode = SDE_MODE_DPMS_LP2;
+
+			if (dsi_display->panel->esd_config.esd_err_irq_gpio > 0) {
+				rc = request_threaded_irq(dsi_display->panel->esd_config.esd_err_irq,
 							NULL, esd_err_irq_handle,
 							dsi_display->panel->esd_config.esd_err_irq_flags,
 							"esd_err_irq", c_conn);
-			if (rc < 0) {
-				pr_err("%s: request irq %d failed\n", __func__, dsi_display->panel->esd_config.esd_err_irq);
+				if (rc < 0) {
+					pr_err("%s: request irq %d failed\n", __func__,
+						dsi_display->panel->esd_config.esd_err_irq);
 					dsi_display->panel->esd_config.esd_err_irq = 0;
-			} else {
-				pr_info("%s: Request esd irq succeed!\n", __func__);
+				} else {
+					pr_info("%s: Request esd irq succeed!\n", __func__);
+				}
 			}
 		}
 #endif
