@@ -3839,8 +3839,16 @@ static ssize_t mdss_fb_get_ea_enable(struct device *dev,
 static DEVICE_ATTR(anti_flicker, S_IRUGO | S_IWUSR,
 	mdss_fb_get_ea_enable, mdss_fb_set_ea_enable);
 
+/*
+ * Some ROMs still expect the original name for DC dimming control.
+ * Keep it as an alias so LiveDisplay's anti-flicker service can write it.
+ */
+static DEVICE_ATTR(dc_enable, S_IRUGO | S_IWUSR,
+	mdss_fb_get_ea_enable, mdss_fb_set_ea_enable);
+
 static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_anti_flicker.attr,
+	&dev_attr_dc_enable.attr,
 	NULL,
 };
 
