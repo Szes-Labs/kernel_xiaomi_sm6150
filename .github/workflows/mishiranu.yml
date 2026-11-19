@@ -20,7 +20,7 @@ on:
           - aosp
           - oem
           - both
-        default: both
+        default: aosp
 
 jobs:
   Mishiranu:
@@ -51,7 +51,7 @@ jobs:
       - name: 🔧 Setup Clang ZyC Toolchain
         run: |
           mkdir -p clang
-          curl -L "https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230725-release/Clang-17.0.0-20230725.tar.gz" | tar -xz -C clang
+          curl -L "https://github.com/ZyCromerZ/Clang/releases/download/18.0.0git-20240124-release/Clang-18.0.0git-20240124.tar.gz" | tar -xz -C clang
 
       - name: 📥 Setup KernelSU
         if: ${{ inputs.ksu == 'ksu' }}
