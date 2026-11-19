@@ -580,6 +580,13 @@ static bool dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 			(!(dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_VRR)) &&
 			(!(dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_POMS)) &&
 			(!(dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DYN_CLK)) &&
+#ifdef CONFIG_MACH_XIAOMI_COURBET
+			/*
+			 * Command mode panels cannot switch resolution while
+			 * continuous splash still owns the DSI host engine.
+			 */
+			!display->is_cont_splash_enabled &&
+#endif
 			(!crtc_state->active_changed ||
 			 display->is_cont_splash_enabled))
 			dsi_mode.dsi_mode_flags |= DSI_MODE_FLAG_DMS;
