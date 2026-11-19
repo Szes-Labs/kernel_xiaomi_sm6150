@@ -3672,14 +3672,6 @@ static int sde_plane_sspp_atomic_check(struct drm_plane *plane,
 	if (!sde_plane_enabled(state))
 		goto modeset_update;
 
-	/*
-	 * A zero-sized source rectangle has nothing to scan out. Some
-	 * userspace clients transiently commit such a layer; treat it as
-	 * disabled instead of rejecting the whole atomic commit with -E2BIG.
-	 */
-	if (!src.w || !src.h)
-		goto modeset_update;
-
 	SDE_DEBUG(
 		"plane%d.%u sspp:%x/%dx%d/%4.4s/%llx/%dx%d+%d+%d crtc:%dx%d+%d+%d\n",
 			plane->base.id, rstate->sequence_id,
